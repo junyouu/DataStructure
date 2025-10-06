@@ -27,6 +27,12 @@ public:
     int size() const;
     ResumeNode *getHead() const;
     void display() const;
+    
+    // New functions
+    void addRecord(const string &desc);     // add new resume record
+    void deleteFromHead();                  // delete first record
+    void deleteFromMiddle(int position);    // delete from middle (1-based index)
+    void deleteFromTail();                  // delete last record
 };
 
 #endif

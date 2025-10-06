@@ -28,6 +28,13 @@ public:
     int size() const;
     JobNode *getHead() const;
     void display() const;
+    
+    // New functions
+    void addRecord(const string &desc);  // add new job record
+    void deleteFromHead();               // delete first record
+    void deleteFromMiddle(int position); // delete from middle (1-based index)
+    void deleteFromTail();               // delete last record
+    JobNode* findJobByID(int jobID);     // find job by ID
 };
 
 #endif

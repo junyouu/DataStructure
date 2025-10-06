@@ -145,3 +145,100 @@ void JobLinkedList::display() const {
 
     if (!head) cout << "(No jobs loaded)\n";
 }
+
+// ---------------- New Functions ----------------
+
+// Add new job record
+void JobLinkedList::addRecord(const string &desc) {
+    insertAtEnd(desc);
+    cout << "New job added successfully! Job ID: " << count << endl;
+}
+
+// Find job by ID
+JobNode* JobLinkedList::findJobByID(int jobID) {
+    JobNode *curr = head;
+    while (curr) {
+        if (curr->jobID == jobID) {
+            return curr;
+        }
+        curr = curr->next;
+    }
+    return nullptr;
+}
+
+// Delete from head
+void JobLinkedList::deleteFromHead() {
+    if (!head) {
+        cout << "List is empty. Nothing to delete.\n";
+        return;
+    }
+    
+    JobNode *temp = head;
+    head = head->next;
+    
+    if (!head) {
+        tail = nullptr;
+    }
+    
+    cout << "Deleted Job ID: " << temp->jobID << " from head\n";
+    delete temp;
+    count--;
+}
+
+// Delete from middle (1-based position)
+void JobLinkedList::deleteFromMiddle(int position) {
+    if (position < 1 || position > count) {
+        cout << "Invalid position. Must be between 1 and " << count << endl;
+        return;
+    }
+    
+    if (position == 1) {
+        deleteFromHead();
+        return;
+    }
+    
+    if (position == count) {
+        deleteFromTail();
+        return;
+    }
+    
+    JobNode *curr = head;
+    JobNode *prev = nullptr;
+    
+    for (int i = 1; i < position; i++) {
+        prev = curr;
+        curr = curr->next;
+    }
+    
+    prev->next = curr->next;
+    cout << "Deleted Job ID: " << curr->jobID << " from position " << position << endl;
+    delete curr;
+    count--;
+}
+
+// Delete from tail
+void JobLinkedList::deleteFromTail() {
+    if (!head) {
+        cout << "List is empty. Nothing to delete.\n";
+        return;
+    }
+    
+    if (head == tail) {
+        cout << "Deleted Job ID: " << head->jobID << " from tail\n";
+        delete head;
+        head = tail = nullptr;
+        count--;
+        return;
+    }
+    
+    JobNode *curr = head;
+    while (curr->next != tail) {
+        curr = curr->next;
+    }
+    
+    cout << "Deleted Job ID: " << tail->jobID << " from tail\n";
+    delete tail;
+    tail = curr;
+    tail->next = nullptr;
+    count--;
+}

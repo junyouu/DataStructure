@@ -140,3 +140,88 @@ void ResumeLinkedList::display() const {
     if (!head)
         cout << "(No resumes loaded)\n";
 }
+
+// ---------------- New Functions ----------------
+
+// Add new resume record
+void ResumeLinkedList::addRecord(const string &desc) {
+    insertAtEnd(desc);
+    cout << "New resume added successfully! Resume ID: " << count << endl;
+}
+
+// Delete from head
+void ResumeLinkedList::deleteFromHead() {
+    if (!head) {
+        cout << "List is empty. Nothing to delete.\n";
+        return;
+    }
+    
+    ResumeNode *temp = head;
+    head = head->next;
+    
+    if (!head) {
+        tail = nullptr;
+    }
+    
+    cout << "Deleted Resume ID: " << temp->resumeID << " from head\n";
+    delete temp;
+    count--;
+}
+
+// Delete from middle (1-based position)
+void ResumeLinkedList::deleteFromMiddle(int position) {
+    if (position < 1 || position > count) {
+        cout << "Invalid position. Must be between 1 and " << count << endl;
+        return;
+    }
+    
+    if (position == 1) {
+        deleteFromHead();
+        return;
+    }
+    
+    if (position == count) {
+        deleteFromTail();
+        return;
+    }
+    
+    ResumeNode *curr = head;
+    ResumeNode *prev = nullptr;
+    
+    for (int i = 1; i < position; i++) {
+        prev = curr;
+        curr = curr->next;
+    }
+    
+    prev->next = curr->next;
+    cout << "Deleted Resume ID: " << curr->resumeID << " from position " << position << endl;
+    delete curr;
+    count--;
+}
+
+// Delete from tail
+void ResumeLinkedList::deleteFromTail() {
+    if (!head) {
+        cout << "List is empty. Nothing to delete.\n";
+        return;
+    }
+    
+    if (head == tail) {
+        cout << "Deleted Resume ID: " << head->resumeID << " from tail\n";
+        delete head;
+        head = tail = nullptr;
+        count--;
+        return;
+    }
+    
+    ResumeNode *curr = head;
+    while (curr->next != tail) {
+        curr = curr->next;
+    }
+    
+    cout << "Deleted Resume ID: " << tail->resumeID << " from tail\n";
+    delete tail;
+    tail = curr;
+    tail->next = nullptr;
+    count--;
+}
