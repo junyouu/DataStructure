@@ -183,8 +183,22 @@ bool JobLinkedList::confirmAction(const string &message) {
 }
 
 // Add new job record
-void JobLinkedList::addRecord(const string &desc) {
-    insertAtEnd(desc);
+void JobLinkedList::addRecord() {
+    // Build description from user input
+    string jobTitle, skills;
+    
+    cout << "\n=== ADD NEW JOB ===\n";
+    cout << "Enter job title: ";
+    getline(cin, jobTitle);
+    
+    cout << "Enter required skills (comma-separated, e.g., Python, Java, SQL): ";
+    getline(cin, skills);
+    
+    // Format the description to match CSV format
+    string description = jobTitle + " needed with experience in " + skills + ".";
+    
+    // Insert the new job
+    insertAtEnd(description);
     
     // Show what was added
     cout << "\n=== NEW JOB ADDED ===\n";

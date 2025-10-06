@@ -32,7 +32,7 @@ public:
     void display() const;
     
     // New functions with confirmation and CSV update
-    void addRecord(const string &desc);  // add new job record
+    void addRecord();  // add new job record (prompts user for input)
     void deleteFromHead();               // delete first record
     void deleteFromMiddle(int position); // delete from middle (1-based index)
     void deleteFromTail();               // delete last record

@@ -92,23 +92,15 @@ int main() {
                 cin.ignore(10000, '\n');
                 
                 if (type == 1) {
-                    string desc;
-                    cout << "Enter job description: ";
-                    getline(cin, desc);
-                    
                     auto start = high_resolution_clock::now();
-                    jobLinkedList.addRecord(desc);
+                    jobLinkedList.addRecord();
                     auto end = high_resolution_clock::now();
                     auto duration = duration_cast<microseconds>(end - start).count();
                     
                     cout << "[Performance] Add job execution time: " << duration << " microseconds\n";
                 } else if (type == 2) {
-                    string desc;
-                    cout << "Enter resume description: ";
-                    getline(cin, desc);
-                    
                     auto start = high_resolution_clock::now();
-                    resumeLinkedList.addRecord(desc);
+                    resumeLinkedList.addRecord();
                     auto end = high_resolution_clock::now();
                     auto duration = duration_cast<microseconds>(end - start).count();
                     

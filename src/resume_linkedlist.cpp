@@ -178,8 +178,19 @@ bool ResumeLinkedList::confirmAction(const string &message) {
 }
 
 // Add new resume record
-void ResumeLinkedList::addRecord(const string &desc) {
-    insertAtEnd(desc);
+void ResumeLinkedList::addRecord() {
+    // Build description from user input
+    string skills;
+    
+    cout << "\n=== ADD NEW RESUME ===\n";
+    cout << "Enter your skills (comma-separated, e.g., Python, Java, SQL): ";
+    getline(cin, skills);
+    
+    // Format the description to match CSV format
+    string description = "Experienced professional skilled in " + skills + ".";
+    
+    // Insert the new resume
+    insertAtEnd(description);
     
     // Show what was added
     cout << "\n=== NEW RESUME ADDED ===\n";

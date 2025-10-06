@@ -31,7 +31,7 @@ public:
     void display() const;
     
     // New functions with confirmation and CSV update
-    void addRecord(const string &desc);     // add new resume record
+    void addRecord();     // add new resume record (prompts user for input)
     void deleteFromHead();                  // delete first record
     void deleteFromMiddle(int position);    // delete from middle (1-based index)
     void deleteFromTail();                  // delete last record
