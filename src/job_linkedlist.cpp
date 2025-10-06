@@ -9,6 +9,7 @@ using namespace std;
 JobLinkedList::JobLinkedList() {
     head = tail = nullptr;
     count = 0;
+    csvFilename = "";
 }
 
 JobLinkedList::~JobLinkedList() {
@@ -86,6 +87,7 @@ void JobLinkedList::loadFromCSV(const string &filename) {
         return;
     }
 
+    csvFilename = filename;  // store filename for later saving
     string line;
     int recordCount = 0;
 
@@ -101,6 +103,28 @@ void JobLinkedList::loadFromCSV(const string &filename) {
 
     file.close();
     cout << "Loaded " << recordCount << " records from " << filename << endl;
+}
+
+// ---------------- save file ----------------
+void JobLinkedList::saveToCSV(const string &filename) {
+    ofstream file(filename);
+    if (!file.is_open()) {
+        cout << "Error: Cannot open " << filename << " for writing" << endl;
+        return;
+    }
+
+    // Write header
+    file << "job_description" << endl;
+    
+    // Write all records
+    JobNode *curr = head;
+    while (curr) {
+        file << "\"" << curr->description << "\"" << endl;
+        curr = curr->next;
+    }
+
+    file.close();
+    cout << "Successfully saved " << count << " records to " << filename << endl;
 }
 
 // ---------------- utility methods ----------------
@@ -148,10 +172,47 @@ void JobLinkedList::display() const {
 
 // ---------------- New Functions ----------------
 
+// Helper function to confirm action
+bool JobLinkedList::confirmAction(const string &message) {
+    cout << "\n" << message << endl;
+    cout << "Do you want to save this change to the CSV file? (y/n): ";
+    char response;
+    cin >> response;
+    cin.ignore();  // Clear the newline from buffer
+    return (response == 'y' || response == 'Y');
+}
+
 // Add new job record
 void JobLinkedList::addRecord(const string &desc) {
     insertAtEnd(desc);
-    cout << "New job added successfully! Job ID: " << count << endl;
+    
+    // Show what was added
+    cout << "\n=== NEW JOB ADDED ===\n";
+    cout << "Job ID: " << count << endl;
+    cout << "Title: " << tail->title << endl;
+    cout << "Keywords: ";
+    bool printed = false;
+    for (int i = 0; i < 10; ++i) {
+        if (!tail->keywords[i].empty()) {
+            if (printed) cout << ", ";
+            cout << tail->keywords[i];
+            printed = true;
+        }
+    }
+    if (!printed) cout << "(none)";
+    cout << "\nDescription: " << tail->description << endl;
+    cout << "====================\n";
+    
+    // Ask for confirmation
+    if (confirmAction("A new job record has been added to the list.")) {
+        if (!csvFilename.empty()) {
+            saveToCSV(csvFilename);
+        } else {
+            cout << "Warning: No CSV filename stored. Cannot save to file.\n";
+        }
+    } else {
+        cout << "Change saved in memory only (not written to CSV file).\n";
+    }
 }
 
 // Find job by ID
@@ -173,16 +234,33 @@ void JobLinkedList::deleteFromHead() {
         return;
     }
     
+    // Show what will be deleted
     JobNode *temp = head;
-    head = head->next;
+    cout << "\n=== DELETING JOB FROM HEAD ===\n";
+    cout << "Job ID: " << temp->jobID << endl;
+    cout << "Title: " << temp->title << endl;
+    cout << "Description: " << temp->description << endl;
+    cout << "==============================\n";
     
+    // Perform deletion
+    head = head->next;
     if (!head) {
         tail = nullptr;
     }
     
-    cout << "Deleted Job ID: " << temp->jobID << " from head\n";
     delete temp;
     count--;
+    
+    // Ask for confirmation
+    if (confirmAction("Job record has been deleted from the list.")) {
+        if (!csvFilename.empty()) {
+            saveToCSV(csvFilename);
+        } else {
+            cout << "Warning: No CSV filename stored. Cannot save to file.\n";
+        }
+    } else {
+        cout << "Change saved in memory only (not written to CSV file).\n";
+    }
 }
 
 // Delete from middle (1-based position)
@@ -210,10 +288,28 @@ void JobLinkedList::deleteFromMiddle(int position) {
         curr = curr->next;
     }
     
+    // Show what will be deleted
+    cout << "\n=== DELETING JOB FROM POSITION " << position << " ===\n";
+    cout << "Job ID: " << curr->jobID << endl;
+    cout << "Title: " << curr->title << endl;
+    cout << "Description: " << curr->description << endl;
+    cout << "==============================\n";
+    
+    // Perform deletion
     prev->next = curr->next;
-    cout << "Deleted Job ID: " << curr->jobID << " from position " << position << endl;
     delete curr;
     count--;
+    
+    // Ask for confirmation
+    if (confirmAction("Job record has been deleted from the list.")) {
+        if (!csvFilename.empty()) {
+            saveToCSV(csvFilename);
+        } else {
+            cout << "Warning: No CSV filename stored. Cannot save to file.\n";
+        }
+    } else {
+        cout << "Change saved in memory only (not written to CSV file).\n";
+    }
 }
 
 // Delete from tail
@@ -223,22 +319,37 @@ void JobLinkedList::deleteFromTail() {
         return;
     }
     
+    // Show what will be deleted
+    cout << "\n=== DELETING JOB FROM TAIL ===\n";
+    cout << "Job ID: " << tail->jobID << endl;
+    cout << "Title: " << tail->title << endl;
+    cout << "Description: " << tail->description << endl;
+    cout << "==============================\n";
+    
     if (head == tail) {
-        cout << "Deleted Job ID: " << head->jobID << " from tail\n";
         delete head;
         head = tail = nullptr;
         count--;
-        return;
+    } else {
+        JobNode *curr = head;
+        while (curr->next != tail) {
+            curr = curr->next;
+        }
+        
+        delete tail;
+        tail = curr;
+        tail->next = nullptr;
+        count--;
     }
     
-    JobNode *curr = head;
-    while (curr->next != tail) {
-        curr = curr->next;
+    // Ask for confirmation
+    if (confirmAction("Job record has been deleted from the list.")) {
+        if (!csvFilename.empty()) {
+            saveToCSV(csvFilename);
+        } else {
+            cout << "Warning: No CSV filename stored. Cannot save to file.\n";
+        }
+    } else {
+        cout << "Change saved in memory only (not written to CSV file).\n";
     }
-    
-    cout << "Deleted Job ID: " << tail->jobID << " from tail\n";
-    delete tail;
-    tail = curr;
-    tail->next = nullptr;
-    count--;
 }

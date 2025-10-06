@@ -9,6 +9,7 @@ using namespace std;
 ResumeLinkedList::ResumeLinkedList() {
     head = tail = nullptr;
     count = 0;
+    csvFilename = "";
 }
 
 ResumeLinkedList::~ResumeLinkedList() {
@@ -78,6 +79,7 @@ void ResumeLinkedList::loadFromCSV(const string &filename) {
         return;
     }
     
+    csvFilename = filename;  // store filename for later saving
     string line;
     int recordCount = 0;
 
@@ -93,6 +95,28 @@ void ResumeLinkedList::loadFromCSV(const string &filename) {
 
     file.close();
     cout << "Loaded " << recordCount << " resumes from " << filename << endl;
+}
+
+// ---------------- save file ----------------
+void ResumeLinkedList::saveToCSV(const string &filename) {
+    ofstream file(filename);
+    if (!file.is_open()) {
+        cout << "Error: Cannot open " << filename << " for writing" << endl;
+        return;
+    }
+
+    // Write header
+    file << "resume" << endl;
+    
+    // Write all records
+    ResumeNode *curr = head;
+    while (curr) {
+        file << "\"" << curr->description << "\"" << endl;
+        curr = curr->next;
+    }
+
+    file.close();
+    cout << "Successfully saved " << count << " records to " << filename << endl;
 }
 
 // ---------------- utility ----------------
@@ -143,10 +167,46 @@ void ResumeLinkedList::display() const {
 
 // ---------------- New Functions ----------------
 
+// Helper function to confirm action
+bool ResumeLinkedList::confirmAction(const string &message) {
+    cout << "\n" << message << endl;
+    cout << "Do you want to save this change to the CSV file? (y/n): ";
+    char response;
+    cin >> response;
+    cin.ignore();  // Clear the newline from buffer
+    return (response == 'y' || response == 'Y');
+}
+
 // Add new resume record
 void ResumeLinkedList::addRecord(const string &desc) {
     insertAtEnd(desc);
-    cout << "New resume added successfully! Resume ID: " << count << endl;
+    
+    // Show what was added
+    cout << "\n=== NEW RESUME ADDED ===\n";
+    cout << "Resume ID: " << count << endl;
+    cout << "Keywords: ";
+    bool printed = false;
+    for (int i = 0; i < 10; ++i) {
+        if (!tail->keywords[i].empty()) {
+            if (printed) cout << ", ";
+            cout << tail->keywords[i];
+            printed = true;
+        }
+    }
+    if (!printed) cout << "(none)";
+    cout << "\nDescription: " << tail->description << endl;
+    cout << "========================\n";
+    
+    // Ask for confirmation
+    if (confirmAction("A new resume record has been added to the list.")) {
+        if (!csvFilename.empty()) {
+            saveToCSV(csvFilename);
+        } else {
+            cout << "Warning: No CSV filename stored. Cannot save to file.\n";
+        }
+    } else {
+        cout << "Change saved in memory only (not written to CSV file).\n";
+    }
 }
 
 // Delete from head
@@ -156,16 +216,32 @@ void ResumeLinkedList::deleteFromHead() {
         return;
     }
     
+    // Show what will be deleted
     ResumeNode *temp = head;
-    head = head->next;
+    cout << "\n=== DELETING RESUME FROM HEAD ===\n";
+    cout << "Resume ID: " << temp->resumeID << endl;
+    cout << "Description: " << temp->description << endl;
+    cout << "=================================\n";
     
+    // Perform deletion
+    head = head->next;
     if (!head) {
         tail = nullptr;
     }
     
-    cout << "Deleted Resume ID: " << temp->resumeID << " from head\n";
     delete temp;
     count--;
+    
+    // Ask for confirmation
+    if (confirmAction("Resume record has been deleted from the list.")) {
+        if (!csvFilename.empty()) {
+            saveToCSV(csvFilename);
+        } else {
+            cout << "Warning: No CSV filename stored. Cannot save to file.\n";
+        }
+    } else {
+        cout << "Change saved in memory only (not written to CSV file).\n";
+    }
 }
 
 // Delete from middle (1-based position)
@@ -193,10 +269,27 @@ void ResumeLinkedList::deleteFromMiddle(int position) {
         curr = curr->next;
     }
     
+    // Show what will be deleted
+    cout << "\n=== DELETING RESUME FROM POSITION " << position << " ===\n";
+    cout << "Resume ID: " << curr->resumeID << endl;
+    cout << "Description: " << curr->description << endl;
+    cout << "=================================\n";
+    
+    // Perform deletion
     prev->next = curr->next;
-    cout << "Deleted Resume ID: " << curr->resumeID << " from position " << position << endl;
     delete curr;
     count--;
+    
+    // Ask for confirmation
+    if (confirmAction("Resume record has been deleted from the list.")) {
+        if (!csvFilename.empty()) {
+            saveToCSV(csvFilename);
+        } else {
+            cout << "Warning: No CSV filename stored. Cannot save to file.\n";
+        }
+    } else {
+        cout << "Change saved in memory only (not written to CSV file).\n";
+    }
 }
 
 // Delete from tail
@@ -206,22 +299,36 @@ void ResumeLinkedList::deleteFromTail() {
         return;
     }
     
+    // Show what will be deleted
+    cout << "\n=== DELETING RESUME FROM TAIL ===\n";
+    cout << "Resume ID: " << tail->resumeID << endl;
+    cout << "Description: " << tail->description << endl;
+    cout << "=================================\n";
+    
     if (head == tail) {
-        cout << "Deleted Resume ID: " << head->resumeID << " from tail\n";
         delete head;
         head = tail = nullptr;
         count--;
-        return;
+    } else {
+        ResumeNode *curr = head;
+        while (curr->next != tail) {
+            curr = curr->next;
+        }
+        
+        delete tail;
+        tail = curr;
+        tail->next = nullptr;
+        count--;
     }
     
-    ResumeNode *curr = head;
-    while (curr->next != tail) {
-        curr = curr->next;
+    // Ask for confirmation
+    if (confirmAction("Resume record has been deleted from the list.")) {
+        if (!csvFilename.empty()) {
+            saveToCSV(csvFilename);
+        } else {
+            cout << "Warning: No CSV filename stored. Cannot save to file.\n";
+        }
+    } else {
+        cout << "Change saved in memory only (not written to CSV file).\n";
     }
-    
-    cout << "Deleted Resume ID: " << tail->resumeID << " from tail\n";
-    delete tail;
-    tail = curr;
-    tail->next = nullptr;
-    count--;
 }
