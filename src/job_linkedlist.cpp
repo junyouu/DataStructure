@@ -2,6 +2,8 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
+#include <cctype>
 using namespace std;
 
 JobLinkedList::JobLinkedList() {
@@ -13,37 +15,70 @@ JobLinkedList::~JobLinkedList() {
     clear();
 }
 
+// ---------------- keyword + title extraction ----------------
+void extractInfo(JobNode *node) {
+    string desc = node->description;
+    transform(desc.begin(), desc.end(), desc.begin(), ::tolower);
 
-void JobLinkedList::insertAtEnd(const string &id, const string &title, const string &desc) {
+    size_t phrasePos = desc.find("needed with experience");
+    if (phrasePos == string::npos) {
+        // no phrase found; use first few words as title
+        stringstream ss(node->description);
+        ss >> node->title;
+        return;
+    }
+
+    // title = text before the phrase (capitalize later)
+    node->title = node->description.substr(0, phrasePos);
+    while (!node->title.empty() && isspace(node->title.back()))
+        node->title.pop_back();
+
+    // locate keyword section
+    size_t startPos = phrasePos + string("needed with experience").length();
+    size_t endPos = node->description.find('.', startPos);
+    if (endPos == string::npos)
+        endPos = node->description.length();
+
+    string skills = node->description.substr(startPos, endPos - startPos);
+
+    // remove leading " in "
+    if (skills.find(" in ") == 0) skills.erase(0, 4);
+
+    // trim spaces
+    skills.erase(0, skills.find_first_not_of(" "));
+    skills.erase(skills.find_last_not_of(" ") + 1);
+
+    // split by comma
+    stringstream ss(skills);
+    string token;
+    int idx = 0;
+    while (getline(ss, token, ',') && idx < 10) {
+        token.erase(0, token.find_first_not_of(" "));
+        token.erase(token.find_last_not_of(" ") + 1);
+        if (!token.empty()) node->keywords[idx++] = token;
+    }
+    for (int i = idx; i < 10; ++i) node->keywords[i] = "";
+}
+
+// ---------------- insert node ----------------
+void JobLinkedList::insertAtEnd(const string &desc) {
     JobNode *node = new JobNode();
-    node->jobID = id;
-    node->title = title;
+    node->jobID = count + 1;
     node->description = desc;
     node->next = nullptr;
 
-    if (!head) { // first node
+    if (!head)
         head = tail = node;
-    } else {
+    else {
         tail->next = node;
         tail = node;
     }
+
     count++;
+    extractInfo(node);
 }
 
-int JobLinkedList::size() const {
-    return count;
-}
-
-void JobLinkedList::clear() {
-    while (head) {
-        JobNode *temp = head;
-        head = head->next;
-        delete temp;
-    }
-    tail = nullptr;
-    count = 0;
-}
-
+// ---------------- load file ----------------
 void JobLinkedList::loadFromCSV(const string &filename) {
     ifstream file(filename);
     if (!file.is_open()) {
@@ -52,30 +87,61 @@ void JobLinkedList::loadFromCSV(const string &filename) {
     }
 
     string line;
-    getline(file, line); // skip header line
+    int recordCount = 0;
 
+    // Skip the header line
+    getline(file, line);
+    
+    // while (getline(file, line) && recordCount < 100) {
     while (getline(file, line)) {
-        stringstream ss(line);
-        string id, title, desc;
-
-        getline(ss, id, ',');
-        getline(ss, title, ',');
-        getline(ss, desc); // remaining text
-
-        // Remove potential quotation marks or whitespace
-        if (!id.empty() && id.front() == '"') id.erase(0, 1);
-        if (!id.empty() && id.back() == '"') id.pop_back();
-        if (!title.empty() && title.front() == '"') title.erase(0, 1);
-        if (!title.empty() && title.back() == '"') title.pop_back();
-        if (!desc.empty() && desc.front() == '"') desc.erase(0, 1);
-        if (!desc.empty() && desc.back() == '"') desc.pop_back();
-
-        insertAtEnd(id, title, desc);
+        if (line.empty()) continue;
+        insertAtEnd(line);
+        recordCount++;
     }
 
     file.close();
+    cout << "Loaded " << recordCount << " records from " << filename << endl;
+}
+
+// ---------------- utility methods ----------------
+void JobLinkedList::clear() {
+    while (head) {
+        JobNode *tmp = head;
+        head = head->next;
+        delete tmp;
+    }
+    tail = nullptr;
+    count = 0;
+}
+
+int JobLinkedList::size() const {
+    return count;
 }
 
 JobNode *JobLinkedList::getHead() const {
     return head;
+}
+
+// ---------------- display ----------------
+void JobLinkedList::display() const {
+    const JobNode *curr = head;
+    cout << "\n=== Job List ===\n";
+    while (curr) {
+        cout << "ID: " << curr->jobID << "\n";
+        cout << "Title: " << curr->title << "\n";
+        cout << "Keywords: ";
+        bool printed = false;
+        for (int i = 0; i < 10; ++i) {
+            if (!curr->keywords[i].empty()) {
+                if (printed) cout << ", ";
+                cout << curr->keywords[i];
+                printed = true;
+            }
+        }
+        if (!printed) cout << "(none)";
+        cout << "\nOriginal Text: " << curr->description << "\n\n";
+        curr = curr->next;
+    }
+
+    if (!head) cout << "(No jobs loaded)\n";
 }
