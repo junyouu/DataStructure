@@ -3,35 +3,37 @@
 #include <iomanip>
 #include "job_linkedlist.h"
 #include "resume_linkedlist.h"
+#include "utility.h"
 #include "matching.h"
 using namespace std;
 using namespace std::chrono;
 
-void displayMenu() {
-    cout << "\n========================================\n";
-    cout << "   Job & Resume Matching System\n";
-    cout << "========================================\n";
-    cout << "1. Match Top 3 Resumes for a Job ID\n";
-    cout << "2. Add New Record (Job/Resume)\n";
-    cout << "3. Delete Record (Head/Middle/Tail)\n";
-    cout << "4. Display All Jobs\n";
-    cout << "5. Display All Resumes\n";
-    cout << "6. Run Full Matching (All Jobs)\n";
-    cout << "0. Exit\n";
-    cout << "========================================\n";
-    cout << "Enter your choice: ";
-}
-
 int main() {
     cout << "=== Job & Resume Matching System ===\n";
 
-    string jobFile = "../data/job_description.csv";
-    string resumeFile = "../data/resume.csv";
+    std::string jobFile = "../data/job_description.csv";
+    std::string resumeFile = "../data/resume.csv";
+
+    std::string tempFolder = "../data/temp/";
+
+    // Copy files into temp folder
+    std::string jobCopy = tempFolder + "job_description.csv";
+    std::string resumeCopy = tempFolder + "resume.csv";
+
+    if (!copyFile(jobFile, jobCopy)) {
+        std::cout << "Failed to copy job file!" << std::endl;
+        return 1;
+    }
+
+    if (!copyFile(resumeFile, resumeCopy)) {
+        std::cout << "Failed to copy resume file!" << std::endl;
+        return 1;
+    }
 
     // --- Load Jobs ---
     auto startJob = high_resolution_clock::now();
     JobLinkedList jobLinkedList;
-    jobLinkedList.loadFromCSV(jobFile);
+    jobLinkedList.loadFromCSV(jobCopy);
     auto endJob = high_resolution_clock::now();
     auto jobDuration = duration_cast<microseconds>(endJob - startJob).count();
 
@@ -41,7 +43,7 @@ int main() {
     // --- Load Resumes ---
     auto startResume = high_resolution_clock::now();
     ResumeLinkedList resumeLinkedList;
-    resumeLinkedList.loadFromCSV(resumeFile);
+    resumeLinkedList.loadFromCSV(resumeCopy);
     auto endResume = high_resolution_clock::now();
     auto resumeDuration = duration_cast<microseconds>(endResume - startResume).count();
 
