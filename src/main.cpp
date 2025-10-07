@@ -1,6 +1,8 @@
 #include <iostream>
 #include <chrono>  // for timing
 #include <iomanip>
+#include <cstdlib>
+#include <string>
 #include "job_linkedlist.h"
 #include "resume_linkedlist.h"
 #include "utility.h"
@@ -13,12 +15,15 @@ int main() {
 
     std::string jobFile = "../data/job_description.csv";
     std::string resumeFile = "../data/resume.csv";
+    std::string tempFolder = "../data/temp";
 
-    std::string tempFolder = "../data/temp/";
+    // Create temp folder s
+    std::string command = "mkdir \"" + tempFolder + "\"";
+    system(command.c_str());
 
     // Copy files into temp folder
-    std::string jobCopy = tempFolder + "job_description.csv";
-    std::string resumeCopy = tempFolder + "resume.csv";
+    std::string jobCopy = tempFolder + "/job_description.csv";
+    std::string resumeCopy = tempFolder + "/resume.csv";
 
     if (!copyFile(jobFile, jobCopy)) {
         std::cout << "Failed to copy job file!" << std::endl;
