@@ -1,3 +1,5 @@
 *.exe
 src/main.exe
 *.md
+data/*.csv
+*.csv
