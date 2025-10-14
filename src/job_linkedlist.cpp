@@ -102,7 +102,6 @@ void JobLinkedList::loadFromCSV(const string &filename) {
     }
 
     file.close();
-    cout << "Loaded " << recordCount << " records from " << filename << endl;
 }
 
 // ---------------- save file ----------------

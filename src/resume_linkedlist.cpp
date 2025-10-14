@@ -94,7 +94,6 @@ void ResumeLinkedList::loadFromCSV(const string &filename) {
     }
 
     file.close();
-    cout << "Loaded " << recordCount << " resumes from " << filename << endl;
 }
 
 // ---------------- save file ----------------
