@@ -28,6 +28,7 @@ void displayMenu() {
     cout << "4. Display All Jobs\n";
     cout << "5. Display All Resumes\n";
     cout << "6. Run Full Matching (All Jobs)\n";
+    cout << "7. Compare Time Efficiency (Array vs LinkedList)\n"; // <-- add this line
     cout << "0. Exit\n";
     cout << "========================================\n";
     cout << "Enter your choice: ";

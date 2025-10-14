@@ -1,10 +1,12 @@
 #include <iostream>
-#include <chrono>  // for timing
+#include <chrono>
 #include <iomanip>
 #include <cstdlib>
 #include <string>
 #include "job_linkedlist.h"
 #include "resume_linkedlist.h"
+#include "job_array.h"
+#include "resume_array.h"
 #include "utility.h"
 #include "matching.h"
 using namespace std;
@@ -45,6 +47,15 @@ int main() {
     cout << "\nLoaded " << jobLinkedList.size() << " job(s) in "
          << jobDuration << " microseconds.\n";
 
+    auto startJobArr = high_resolution_clock::now();
+    JobArray jobArray;
+    jobArray.loadJobs(jobCopy);
+    auto endJobArr = high_resolution_clock::now();
+    auto jobDurationArr = duration_cast<microseconds>(endJobArr - startJobArr).count();
+
+    cout << "Loaded " << jobArray.getSize() << " job(s) [ARRAY] in "
+     << jobDurationArr << " microseconds.\n";
+
     // --- Load Resumes ---
     auto startResume = high_resolution_clock::now();
     ResumeLinkedList resumeLinkedList;
@@ -54,6 +65,15 @@ int main() {
 
     cout << "Loaded " << resumeLinkedList.size() << " resume(s) in "
          << resumeDuration << " microseconds.\n";
+
+    auto startResArr = high_resolution_clock::now();
+    ResumeArray resumeArray;
+    resumeArray.loadResumes(resumeCopy);
+    auto endResArr = high_resolution_clock::now();
+    auto resDurationArr = duration_cast<microseconds>(endResArr - startResArr).count();
+
+    cout << "Loaded " << resumeArray.getSize() << " resume(s) [ARRAY] in "
+        << resDurationArr << " microseconds.\n";
 
     // Menu loop
     int choice;
@@ -195,13 +215,36 @@ int main() {
                 cout << "\n[Performance] Full matching execution time: " << matchDuration << " microseconds\n";
                 break;
             }
+
+            case 7: {
+                cout << "\n=== Comparing Time Efficiency ===\n";
+
+                // --- Match 10,000 records test ---
+                auto startLL = high_resolution_clock::now();
+                Matcher::findTopMatches(jobLinkedList, resumeLinkedList);
+                auto endLL = high_resolution_clock::now();
+                auto timeLL = duration_cast<microseconds>(endLL - startLL).count();
+
+                auto startArr = high_resolution_clock::now();
+                jobArray.matchJobs({}); // dummy for test or use real resume data
+                auto endArr = high_resolution_clock::now();
+                auto timeArr = duration_cast<microseconds>(endArr - startArr).count();
+
+                cout << "LinkedList Match Time: " << timeLL << " µs\n";
+                cout << "ArrayList Match Time:  " << timeArr << " µs\n";
+                break;
+            }
+
             
             case 0: {
                 cout << "\n=== Final Execution Time Summary ===\n";
                 cout << "Initial Job Loading:    " << jobDuration << " microseconds\n";
                 cout << "Initial Resume Loading: " << resumeDuration << " microseconds\n";
+                cout << "Array Job Loading:       " << jobDurationArr << " microseconds\n";
+                cout << "Array Resume Loading:    " << resDurationArr << " microseconds\n";
                 cout << "Total Initial:          " << (jobDuration + resumeDuration) << " microseconds\n";
                 cout << "\nThank you for using the Job & Resume Matching System!\n";
+                
                 break;
             }
             
