@@ -2,26 +2,37 @@
 #define RESUME_ARRAY_H
 
 #include <string>
-#include <vector>
-using namespace std;
 
 struct Resume {
-    string id;
-    string name;
-    string skills;
-    string experience;
+    std::string id;
+    std::string name;
+    std::string skills;
+    std::string experience;
 };
 
 class ResumeArray {
 private:
-    vector<Resume> resumes;
+    Resume *resumes;
+    int resumesCount;
+    int resumesCapacity;
+    std::string csvFilename; // store filename used to load/save temp CSV
+
+    void ensureCapacity(int minCapacity);
 
 public:
-    // 1. Load resumes from CSV
-    void loadResumes(const string& filename);
+    ResumeArray();
+    ~ResumeArray();
 
-    // 2. Match with job data (dummy version)
-    void matchResumes(const vector<Resume>& otherResumes);
+    // 1. Load resumes from CSV
+    void loadResumes(const std::string& filename);
+
+    // Save resumes back to CSV (will write to the provided filename)
+    void saveToCSV(const std::string &filename);
+
+    bool confirmAction(const std::string &message);
+
+    // 2. Match with other resumes (otherResumes is raw array)
+    void matchResumes(const Resume *otherResumes, int otherCount);
 
     // 3. Input resume number and match 3 jobs
     void matchThreeJobs(int resumeIndex);
@@ -33,7 +44,7 @@ public:
     void deleteResume(int position);
 
     // Utility
-    int getSize() const { return resumes.size(); }
+    int getSize() const { return resumesCount; }
     const Resume& getResume(int index) const { return resumes[index]; }
     void printResumes(int count = 5) const;
 };

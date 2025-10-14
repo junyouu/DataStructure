@@ -7,7 +7,7 @@
 class Matcher {
 public:
     static void findTopMatches(JobLinkedList &jobs, ResumeLinkedList &resumes);
-    
+
     // New function: match 3 resumes for a specific job ID
     static void matchTop3ForJob(int jobID, JobLinkedList &jobs, ResumeLinkedList &resumes);
 };
