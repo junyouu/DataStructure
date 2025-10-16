@@ -4,7 +4,9 @@
 #include <sstream>
 #include <algorithm>
 #include <cctype>
+#include <chrono>
 using namespace std;
+using namespace std::chrono;
 
 JobLinkedList::JobLinkedList() {
     head = tail = nullptr;
@@ -81,6 +83,8 @@ void JobLinkedList::insertAtEnd(const string &desc) {
 
 // ---------------- load file ----------------
 void JobLinkedList::loadFromCSV(const string &filename) {
+    auto start = high_resolution_clock::now();
+    
     ifstream file(filename);
     if (!file.is_open()) {
         cout << "Error: Cannot open " << filename << endl;
@@ -102,10 +106,16 @@ void JobLinkedList::loadFromCSV(const string &filename) {
     }
 
     file.close();
+    
+    auto end = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(end - start).count();
+    cout << "[Performance] Load execution time: " << duration << " microseconds\n";
 }
 
 // ---------------- save file ----------------
 void JobLinkedList::saveToCSV(const string &filename) {
+    auto start = high_resolution_clock::now();
+    
     ofstream file(filename);
     if (!file.is_open()) {
         cout << "Error: Cannot open " << filename << " for writing" << endl;
@@ -124,6 +134,10 @@ void JobLinkedList::saveToCSV(const string &filename) {
 
     file.close();
     cout << "Successfully saved " << count << " records to " << filename << endl;
+    
+    auto end = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(end - start).count();
+    cout << "[Performance] Save execution time: " << duration << " microseconds\n";
 }
 
 // ---------------- utility methods ----------------
@@ -147,6 +161,8 @@ JobNode *JobLinkedList::getHead() const {
 
 // ---------------- display ----------------
 void JobLinkedList::display() const {
+    auto start = high_resolution_clock::now();
+    
     const JobNode *curr = head;
     cout << "\n=== Job List ===\n";
     while (curr) {
@@ -167,6 +183,10 @@ void JobLinkedList::display() const {
     }
 
     if (!head) cout << "(No jobs loaded)\n";
+    
+    auto end = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(end - start).count();
+    cout << "[Performance] Display execution time: " << duration << " microseconds\n";
 }
 
 // ---------------- New Functions ----------------

@@ -3,3 +3,5 @@ src/main.exe
 *.md
 data/*.csv
 *.csv
+main
+*.o
