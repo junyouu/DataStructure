@@ -3,6 +3,7 @@
 #include <fstream>
 #include <sstream>
 #include <chrono>
+using namespace std;
 using namespace std::chrono;
 
 ResumeArray::ResumeArray(): resumes(nullptr), resumesCount(0), resumesCapacity(0) {}
@@ -153,14 +154,26 @@ void ResumeArray::deleteResume(int position) {
     }
 }
 
+
 void ResumeArray::printResumes(int count) const {
     auto start = high_resolution_clock::now();
-    
-    for (int i = 0; i < count && i < resumesCount; ++i) {
-        std::cout << i + 1 << ". " << resumes[i].skills << std::endl;
+
+    cout << "\n========================================\n";
+    cout << "              Resume List\n";
+    cout << "========================================\n";
+
+    if (resumesCount == 0) {
+        cout << "(No resumes loaded)\n";
+    } else {
+        for (int i = 0; i < count && i < resumesCount; ++i) {
+            cout << "ID: " << resumes[i].id << "\n";
+            cout << "Name: " << resumes[i].name << "\n";
+            cout << "Skills: " << (resumes[i].skills.empty() ? "(none)" : resumes[i].skills) << "\n";
+            cout << "Experience: " << (resumes[i].experience.empty() ? "(none)" : resumes[i].experience) << "\n";
+        }
     }
-    
+
     auto end = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(end - start).count();
-    std::cout << "[Performance] Display execution time: " << duration << " microseconds\n";
+    cout << "[Performance] Display execution time: " << duration << " microseconds\n";
 }

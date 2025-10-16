@@ -18,37 +18,12 @@ int main() {
     cout << "              Loading Job               \n";
     cout << "========================================\n";
 
-    // Use paths relative to workspace root by default, but try a parent-data fallback
-    auto existsPath = [](const std::string &p) {
-        std::ifstream f(p.c_str());
-        return f.good();
-    };
+    std::string jobFile = "../data/job_description.csv";
+    std::string resumeFile = "../data/resume.csv";
+    std::string tempFolder = "../data/temp";
 
-    std::string jobFile;
-    std::string resumeFile;
-    std::string tempFolder;
-    if (existsPath("data/job_description.csv") && existsPath("data/resume.csv")) {
-        jobFile = "data/job_description.csv";
-        resumeFile = "data/resume.csv";
-        tempFolder = "data/temp";
-    } else if (existsPath("../data/job_description.csv") && existsPath("../data/resume.csv")) {
-        jobFile = "../data/job_description.csv";
-        resumeFile = "../data/resume.csv";
-        tempFolder = "../data/temp";
-    } else if (existsPath("..\\data\\job_description.csv") && existsPath("..\\data\\resume.csv")) {
-        // Windows-style parent path
-        jobFile = "..\\data\\job_description.csv";
-        resumeFile = "..\\data\\resume.csv";
-        tempFolder = "..\\data\\temp";
-    } else {
-        // fallback to default (will produce error message if not found)
-        jobFile = "data/job_description.csv";
-        resumeFile = "data/resume.csv";
-        tempFolder = "data/temp";
-    }
-
-    // Create temp folder (ignore error if already exists)
-    std::string command = "mkdir -p \"" + tempFolder + "\" 2>/dev/null || true";
+    // Create temp folder
+    std::string command = "mkdir \"" + tempFolder + "\"";
     system(command.c_str());
 
     // Copy files into temp folder
