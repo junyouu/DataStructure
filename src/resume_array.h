@@ -39,6 +39,9 @@ public:
 
     // 4. Add new resume
     void addResume(const Resume& newResume);
+    
+    // Interactive add record (matching linked list interface)
+    void addRecord();
 
     // 5. Delete resume (head, middle, tail)
     void deleteResume(int position);

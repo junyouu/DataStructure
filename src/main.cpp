@@ -26,25 +26,29 @@ int main() {
 
     std::string jobFile;
     std::string resumeFile;
+    std::string tempFolder;
     if (existsPath("data/job_description.csv") && existsPath("data/resume.csv")) {
         jobFile = "data/job_description.csv";
         resumeFile = "data/resume.csv";
+        tempFolder = "data/temp";
     } else if (existsPath("../data/job_description.csv") && existsPath("../data/resume.csv")) {
         jobFile = "../data/job_description.csv";
         resumeFile = "../data/resume.csv";
+        tempFolder = "../data/temp";
     } else if (existsPath("..\\data\\job_description.csv") && existsPath("..\\data\\resume.csv")) {
         // Windows-style parent path
         jobFile = "..\\data\\job_description.csv";
         resumeFile = "..\\data\\resume.csv";
+        tempFolder = "..\\data\\temp";
     } else {
         // fallback to default (will produce error message if not found)
         jobFile = "data/job_description.csv";
         resumeFile = "data/resume.csv";
+        tempFolder = "data/temp";
     }
-    std::string tempFolder = "data/temp";
 
-    // Create temp folder
-    std::string command = "mkdir \"" + tempFolder + "\"";
+    // Create temp folder (ignore error if already exists)
+    std::string command = "mkdir -p \"" + tempFolder + "\" 2>/dev/null || true";
     system(command.c_str());
 
     // Copy files into temp folder
@@ -206,18 +210,8 @@ int main() {
                             auto duration = duration_cast<microseconds>(end - start).count();
                             cout << "[Performance] Add job execution time: " << duration << " microseconds\n";
                         } else if (type == 2) {
-                            // Prompt for resume skills and add via addResume
-                            cin.ignore(10000, '\n');
-                            std::string skills;
-                            cout << "Enter skills (comma-separated): ";
-                            std::getline(cin, skills);
-                            Resume r;
-                            r.id = "";
-                            r.name = "New Resume";
-                            r.skills = skills;
-                            r.experience = "";
                             auto start = high_resolution_clock::now();
-                            resumeArray.addResume(r);
+                            resumeArray.addRecord();
                             auto end = high_resolution_clock::now();
                             auto duration = duration_cast<microseconds>(end - start).count();
                             cout << "[Performance] Add resume execution time: " << duration << " microseconds\n";

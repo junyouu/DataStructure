@@ -4,7 +4,9 @@
 #include <sstream>
 #include <algorithm>
 #include <cctype>
+#include <chrono>
 using namespace std;
+using namespace std::chrono;
 
 ResumeLinkedList::ResumeLinkedList() {
     head = tail = nullptr;
@@ -73,6 +75,8 @@ void ResumeLinkedList::insertAtEnd(const string &desc) {
 
 // ---------------- load file ----------------
 void ResumeLinkedList::loadFromCSV(const string &filename) {
+    auto start = high_resolution_clock::now();
+    
     ifstream file(filename);
     if (!file.is_open()) {
         cout << "Error: Cannot open " << filename << endl;
@@ -94,10 +98,16 @@ void ResumeLinkedList::loadFromCSV(const string &filename) {
     }
 
     file.close();
+    
+    auto end = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(end - start).count();
+    cout << "[Performance] Load execution time: " << duration << " microseconds\n";
 }
 
 // ---------------- save file ----------------
 void ResumeLinkedList::saveToCSV(const string &filename) {
+    auto start = high_resolution_clock::now();
+    
     ofstream file(filename);
     if (!file.is_open()) {
         cout << "Error: Cannot open " << filename << " for writing" << endl;
@@ -116,6 +126,10 @@ void ResumeLinkedList::saveToCSV(const string &filename) {
 
     file.close();
     cout << "Successfully saved " << count << " records to " << filename << endl;
+    
+    auto end = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(end - start).count();
+    cout << "[Performance] Save execution time: " << duration << " microseconds\n";
 }
 
 // ---------------- utility ----------------
@@ -139,6 +153,8 @@ ResumeNode *ResumeLinkedList::getHead() const {
 
 // ---------------- display ----------------
 void ResumeLinkedList::display() const {
+    auto start = high_resolution_clock::now();
+    
     const ResumeNode *current = head;
     cout << "\n=== Resume List ===\n";
 
@@ -162,6 +178,10 @@ void ResumeLinkedList::display() const {
 
     if (!head)
         cout << "(No resumes loaded)\n";
+    
+    auto end = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(end - start).count();
+    cout << "[Performance] Display execution time: " << duration << " microseconds\n";
 }
 
 // ---------------- New Functions ----------------

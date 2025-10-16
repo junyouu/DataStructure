@@ -5,6 +5,8 @@
 #include <cctype>
 #include <algorithm>
 #include <vector>
+#include <chrono>
+using namespace std::chrono;
 
 // Helper: trim whitespace and surrounding quotes
 static std::string trim(const std::string &s) {
@@ -70,6 +72,8 @@ void JobArray::ensureCapacity(int minCapacity) {
 }
 
 void JobArray::loadJobs(const std::string& filename) {
+    auto start = high_resolution_clock::now();
+    
     std::ifstream file(filename);
     if (!file.is_open()) { std::cerr << "Error opening file: " << filename << std::endl; return; }
 
@@ -146,10 +150,15 @@ void JobArray::loadJobs(const std::string& filename) {
         jobs[jobsCount++] = job;
     }
     csvFilename = filename;
+    
+    auto end = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(end - start).count();
+    std::cout << "[Performance] Load execution time: " << duration << " microseconds\n";
 }
 
 // Save jobs back to CSV (single-column description CSV format, matching linked-list save)
 void JobArray::saveToCSV(const std::string &filename) {
+    auto start = high_resolution_clock::now();
     std::ofstream file(filename);
     if (!file.is_open()) { std::cout << "Error: Cannot open " << filename << " for writing\n"; return; }
     file << "job_description" << std::endl;
@@ -158,6 +167,10 @@ void JobArray::saveToCSV(const std::string &filename) {
     }
     file.close();
     std::cout << "Successfully saved " << jobsCount << " records to " << filename << std::endl;
+    
+    auto end = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(end - start).count();
+    std::cout << "[Performance] Save execution time: " << duration << " microseconds\n";
 }
 
 bool JobArray::confirmAction(const std::string &message) {
@@ -184,7 +197,8 @@ void JobArray::addRecord() {
     std::cout << "Title: " << j.title << "\n";
     std::cout << "Keywords: "; bool printed = false; for (int i = 0; i < 10; ++i) { if (!j.keywords[i].empty()) { if (printed) std::cout << ", "; std::cout << j.keywords[i]; printed = true; }} if (!printed) std::cout << "(none)"; std::cout << "\nDescription: " << j.description << "\n";
     if (confirmAction("A new job record has been added to the array.")) {
-        if (!csvFilename.empty()) saveToCSV(csvFilename); else std::cout << "Warning: no CSV filename stored. Cannot save.\n";
+        if (!csvFilename.empty()) saveToCSV(csvFilename); 
+        else std::cout << "Warning: no CSV filename stored. Cannot save.\n";
     } else {
         std::cout << "Change saved in memory only.\n";
     }
@@ -377,6 +391,8 @@ void JobArray::deleteJob(int position) {
 }
 
 void JobArray::printJobs(int count) const {
+    auto start = high_resolution_clock::now();
+    
     if (jobsCount == 0) {
         std::cout << "(No jobs loaded)\n";
         return;
@@ -398,4 +414,8 @@ void JobArray::printJobs(int count) const {
         if (!printed) std::cout << "(none)";
         std::cout << "\nOriginal Text: " << j.description << "\n\n";
     }
+    
+    auto end = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(end - start).count();
+    std::cout << "[Performance] Display execution time: " << duration << " microseconds\n";
 }
