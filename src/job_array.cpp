@@ -104,15 +104,22 @@ void JobArray::loadFromCSV(const string &filename) {
     file.close();
 
     auto end = high_resolution_clock::now();
-    cout << "[Performance] Load execution time: "
+    cout << "[Performance] loadFromCSV [Job Array] execution time: "
          << duration_cast<microseconds>(end - start).count()
          << " microseconds\n";
 }
 
 // ---------------- saveToCSV ----------------
 void JobArray::saveToCSV(const string &filename) {
+    // Note: Performance timer stops BEFORE file writing.
     auto start = high_resolution_clock::now();
 
+    auto end = high_resolution_clock::now();
+    cout << "[Performance] (pre-save) processing time: "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds\n";
+
+    // File I/O (not included in timing)
     ofstream file(filename);
     if (!file.is_open()) {
         cout << "Error: Cannot open " << filename << " for writing\n";
@@ -125,11 +132,6 @@ void JobArray::saveToCSV(const string &filename) {
 
     file.close();
     cout << "Successfully saved " << jobsCount << " records to " << filename << endl;
-
-    auto end = high_resolution_clock::now();
-    cout << "[Performance] Save execution time: "
-         << duration_cast<microseconds>(end - start).count()
-         << " microseconds\n";
 }
 
 // ---------------- display ----------------
@@ -156,7 +158,7 @@ void JobArray::display() const {
     if (jobsCount == 0) cout << "(No jobs loaded)\n";
 
     auto end = high_resolution_clock::now();
-    cout << "[Performance] Display execution time: "
+    cout << "[Performance] display execution time: "
          << duration_cast<microseconds>(end - start).count()
          << " microseconds\n";
 }
@@ -172,6 +174,7 @@ bool JobArray::confirmAction(const string &message) {
 }
 
 void JobArray::addRecord() {
+    // 1) Collect user input (do NOT time this — it's human interactive)
     string jobTitle, skills;
     cout << "\n=== ADD NEW JOB ===\n";
     cout << "Enter job title: ";
@@ -179,28 +182,33 @@ void JobArray::addRecord() {
     cout << "Enter required skills (comma-separated): ";
     getline(cin, skills);
 
+    // 2) Start timing for internal processing only
+    // Build description and insert (this includes the extractInfo step)
     string desc = jobTitle + " needed with experience in " + skills + ".";
+    auto start = high_resolution_clock::now();
     insertAtEnd(desc);
 
-    cout << "New job added successfully.\n";
+    // Stop timing before any file I/O or user confirmation
+    auto end = high_resolution_clock::now();
+    cout << "[Performance] addRecord (processing) execution time: "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds\n";
+
+    // 3) Ask user whether to save (do not include this interaction in the processing time)
     if (confirmAction("Save to CSV?")) {
-        if (!csvFilename.empty()) saveToCSV(csvFilename);
-        else cout << "Warning: No CSV filename stored.\n";
+        if (!csvFilename.empty()) {
+            // saveToCSV() prints its own timing; don't double-count it here
+            saveToCSV(csvFilename);
+        } else {
+            cout << "Warning: No CSV filename stored.\n";
+        }
     }
 }
 
-void JobArray::deleteFromHead() {
-    if (jobsCount == 0) {
-        cout << "Array is empty.\n";
-        return;
-    }
-    for (int i = 1; i < jobsCount; ++i)
-        jobs[i - 1] = jobs[i];
-    jobsCount--;
-    cout << "Deleted first record.\n";
-}
 
 void JobArray::deleteFromMiddle(int position) {
+    auto start = high_resolution_clock::now();
+
     if (position < 1 || position > jobsCount) {
         cout << "Invalid position.\n";
         return;
@@ -209,17 +217,30 @@ void JobArray::deleteFromMiddle(int position) {
         jobs[i - 1] = jobs[i];
     jobsCount--;
     cout << "Deleted record at position " << position << ".\n";
+
+    auto end = high_resolution_clock::now();
+    cout << "[Performance] deleteFromMiddle execution time: "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds\n";
 }
 
 void JobArray::deleteFromTail() {
+    auto start = high_resolution_clock::now();
+
     if (jobsCount == 0) {
         cout << "Array is empty.\n";
         return;
     }
     jobsCount--;
     cout << "Deleted last record.\n";
+
+    auto end = high_resolution_clock::now();
+    cout << "[Performance] deleteFromTail execution time: "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds\n";
 }
 
+// ---------------- Utility ----------------
 void JobArray::clear() {
     delete[] jobs;
     jobs = nullptr;
@@ -240,4 +261,49 @@ Job* JobArray::findJobByID(int jobID) {
 
 const Job& JobArray::getJob(int index) const {
     return jobs[index];
+}
+
+// ---------------- deleteFromHead ----------------
+void JobArray::deleteFromHead() {
+    if (jobsCount == 0) {
+        cout << "Array is empty. Nothing to delete.\n";
+        return;
+    }
+
+    // Show what will be deleted (don't include this in timing — it's I/O)
+    cout << "\n=== DELETING JOB FROM HEAD ===\n";
+    cout << "Job ID: " << jobs[0].jobID << endl;
+    cout << "Title: " << jobs[0].title << endl;
+    cout << "Description: " << jobs[0].description << endl;
+    cout << "==============================\n";
+
+    // Start timing for processing (shifting & bookkeeping) only
+    auto start = high_resolution_clock::now();
+
+    // Shift everything left by one
+    for (int i = 1; i < jobsCount; ++i) {
+        jobs[i - 1] = jobs[i];
+    }
+    jobsCount--;
+
+    // Reassign jobID to keep them sequential (1..jobsCount)
+    for (int i = 0; i < jobsCount; ++i) {
+        jobs[i].jobID = i + 1;
+    }
+
+    auto end = high_resolution_clock::now();
+    cout << "[Performance] deleteFromHead (processing) execution time: "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds\n";
+
+    // Ask for confirmation to save (do not include save time above)
+    if (confirmAction("Job record has been deleted from the array.")) {
+        if (!csvFilename.empty()) {
+            saveToCSV(csvFilename);
+        } else {
+            cout << "Warning: No CSV filename stored. Cannot save to file.\n";
+        }
+    } else {
+        cout << "Change saved in memory only (not written to CSV file).\n";
+    }
 }

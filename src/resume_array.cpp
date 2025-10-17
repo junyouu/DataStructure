@@ -59,11 +59,10 @@ void ResumeArray::loadFromCSV(const string &filename) {
         r.resumeID = id++;
         r.description = line;
 
-        // --- Keyword Extraction Logic (like JobArray::extractInfo) ---
+        // --- Keyword Extraction ---
         string desc = r.description;
         transform(desc.begin(), desc.end(), desc.begin(), ::tolower);
 
-        // Find “skilled in” or “experienced in” phrase
         size_t phrasePos = desc.find("skilled in");
         if (phrasePos == string::npos)
             phrasePos = desc.find("experienced in");
@@ -76,10 +75,8 @@ void ResumeArray::loadFromCSV(const string &filename) {
             size_t endPos = r.description.find('.', startPos);
             if (endPos == string::npos)
                 endPos = r.description.length();
-
             skills = r.description.substr(startPos, endPos - startPos);
         } else {
-            // fallback: just take first 10 words
             stringstream ss(r.description);
             string word;
             int k = 0;
@@ -90,7 +87,6 @@ void ResumeArray::loadFromCSV(const string &filename) {
             continue;
         }
 
-        // Split skills by comma
         stringstream ss(skills);
         string token;
         int idx = 0;
@@ -107,15 +103,14 @@ void ResumeArray::loadFromCSV(const string &filename) {
     file.close();
 
     auto end = high_resolution_clock::now();
-    cout << "[Performance] Loaded " << resumesCount
-         << " resume(s) [ARRAY] in "
+    cout << "[Performance] loadFromCSV [Resume Array] execution time: "
          << duration_cast<microseconds>(end - start).count()
-         << " microseconds.\n";
+         << " microseconds\n";
 }
-
 
 void ResumeArray::saveToCSV(const string &filename) {
     auto start = high_resolution_clock::now();
+
     ofstream file(filename);
     if (!file.is_open()) {
         cerr << "Error: cannot open " << filename << " for writing.\n";
@@ -132,7 +127,7 @@ void ResumeArray::saveToCSV(const string &filename) {
     auto end = high_resolution_clock::now();
     cout << "[Performance] Save execution time: "
          << duration_cast<microseconds>(end - start).count()
-         << " microseconds.\n";
+         << " microseconds\n";
 }
 
 // ===============================
@@ -152,7 +147,6 @@ void ResumeArray::display() const {
     auto start = high_resolution_clock::now();
 
     cout << "\n=== Resume List ===\n";
-
     if (resumesCount == 0) {
         cout << "(No resumes loaded)\n";
     } else {
@@ -174,10 +168,10 @@ void ResumeArray::display() const {
     }
 
     auto end = high_resolution_clock::now();
-    auto duration = duration_cast<microseconds>(end - start).count();
-    cout << "[Performance] Display execution time: " << duration << " microseconds\n";
+    cout << "[Performance] Display execution time: "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds\n";
 }
-
 
 // ===============================
 // Add Record
@@ -188,11 +182,11 @@ void ResumeArray::addRecord() {
     cout << "Enter resume description: ";
     getline(cin, desc);
 
+    auto start = high_resolution_clock::now();
     Resume r;
     r.resumeID = resumesCount + 1;
     r.description = desc;
 
-    // Basic keyword extraction
     stringstream ss(desc);
     string word;
     int k = 0;
@@ -202,7 +196,10 @@ void ResumeArray::addRecord() {
     ensureCapacity(resumesCount + 1);
     resumes[resumesCount++] = r;
 
-    cout << "\nResume added successfully.\n";
+    auto end = high_resolution_clock::now();
+    cout << "[Performance] Add execution time: "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds\n";
 
     if (!csvFilename.empty()) {
         if (confirmAction("Save this change to CSV?"))
@@ -216,6 +213,8 @@ void ResumeArray::addRecord() {
 // Delete Functions
 // ===============================
 void ResumeArray::deleteFromHead() {
+    auto start = high_resolution_clock::now();
+
     if (resumesCount == 0) {
         cout << "No resumes to delete.\n";
         return;
@@ -223,13 +222,19 @@ void ResumeArray::deleteFromHead() {
     for (int i = 1; i < resumesCount; ++i)
         resumes[i - 1] = resumes[i];
     resumesCount--;
-    cout << "Deleted first resume.\n";
+
+    auto end = high_resolution_clock::now();
+    cout << "[Performance] Delete-from-head execution time: "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds\n";
 
     if (!csvFilename.empty() && confirmAction("Save this change to CSV?"))
         saveToCSV(csvFilename);
 }
 
 void ResumeArray::deleteFromMiddle(int position) {
+    auto start = high_resolution_clock::now();
+
     if (resumesCount == 0) {
         cout << "No resumes to delete.\n";
         return;
@@ -241,19 +246,29 @@ void ResumeArray::deleteFromMiddle(int position) {
     for (int i = position; i < resumesCount; ++i)
         resumes[i - 1] = resumes[i];
     resumesCount--;
-    cout << "Deleted resume at position " << position << ".\n";
+
+    auto end = high_resolution_clock::now();
+    cout << "[Performance] Delete-from-middle execution time: "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds\n";
 
     if (!csvFilename.empty() && confirmAction("Save this change to CSV?"))
         saveToCSV(csvFilename);
 }
 
 void ResumeArray::deleteFromTail() {
+    auto start = high_resolution_clock::now();
+
     if (resumesCount == 0) {
         cout << "No resumes to delete.\n";
         return;
     }
     resumesCount--;
-    cout << "Deleted last resume.\n";
+
+    auto end = high_resolution_clock::now();
+    cout << "[Performance] Delete-from-tail execution time: "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds\n";
 
     if (!csvFilename.empty() && confirmAction("Save this change to CSV?"))
         saveToCSV(csvFilename);

@@ -23,24 +23,20 @@ void extractResumeKeywords(ResumeNode *node) {
     string desc = node->description;
     transform(desc.begin(), desc.end(), desc.begin(), ::tolower);
 
-    // Find "skilled in"
     size_t startPos = desc.find("skilled in");
     if (startPos == string::npos) return;
 
     startPos += string("skilled in").length();
 
-    // Find the end of the sentence
     size_t endPos = desc.find('.', startPos);
     if (endPos == string::npos)
         endPos = desc.length();
 
     string skills = node->description.substr(startPos, endPos - startPos);
 
-    // Trim spaces
     skills.erase(0, skills.find_first_not_of(" "));
     skills.erase(skills.find_last_not_of(" ") + 1);
 
-    // Split by comma
     stringstream ss(skills);
     string token;
     int idx = 0;
@@ -83,14 +79,12 @@ void ResumeLinkedList::loadFromCSV(const string &filename) {
         return;
     }
     
-    csvFilename = filename;  // store filename for later saving
+    csvFilename = filename;
     string line;
     int recordCount = 0;
 
-    // Skip the header line
-    getline(file, line);
+    getline(file, line); // Skip header
 
-    // while (getline(file, line) && recordCount < 100) {
     while (getline(file, line)) {
         if (line.empty()) continue;
         insertAtEnd(line);
@@ -100,24 +94,23 @@ void ResumeLinkedList::loadFromCSV(const string &filename) {
     file.close();
     
     auto end = high_resolution_clock::now();
-    auto duration = duration_cast<microseconds>(end - start).count();
-    cout << "[Performance] Load execution time: " << duration << " microseconds\n";
+    cout << "[Performance] loadFromCSV [Resume Linked List] execution time: "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds\n";
 }
 
 // ---------------- save file ----------------
 void ResumeLinkedList::saveToCSV(const string &filename) {
     auto start = high_resolution_clock::now();
-    
+
     ofstream file(filename);
     if (!file.is_open()) {
         cout << "Error: Cannot open " << filename << " for writing" << endl;
         return;
     }
 
-    // Write header
     file << "resume" << endl;
-    
-    // Write all records
+
     ResumeNode *curr = head;
     while (curr) {
         file << "\"" << curr->description << "\"" << endl;
@@ -128,8 +121,9 @@ void ResumeLinkedList::saveToCSV(const string &filename) {
     cout << "Successfully saved " << count << " records to " << filename << endl;
     
     auto end = high_resolution_clock::now();
-    auto duration = duration_cast<microseconds>(end - start).count();
-    cout << "[Performance] Save execution time: " << duration << " microseconds\n";
+    cout << "[Performance] saveToCSV execution time: "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds\n";
 }
 
 // ---------------- utility ----------------
@@ -180,54 +174,36 @@ void ResumeLinkedList::display() const {
         cout << "(No resumes loaded)\n";
     
     auto end = high_resolution_clock::now();
-    auto duration = duration_cast<microseconds>(end - start).count();
-    cout << "[Performance] Display execution time: " << duration << " microseconds\n";
+    cout << "[Performance] display execution time: "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds\n";
 }
 
-// ---------------- New Functions ----------------
-
-// Helper function to confirm action
+// ---------------- confirm action ----------------
 bool ResumeLinkedList::confirmAction(const string &message) {
     cout << "\n" << message << endl;
     cout << "Do you want to save this change to the CSV file? (y/n): ";
     char response;
     cin >> response;
-    cin.ignore();  // Clear the newline from buffer
+    cin.ignore();
     return (response == 'y' || response == 'Y');
 }
 
-// Add new resume record
+// ---------------- add record ----------------
 void ResumeLinkedList::addRecord() {
-    // Build description from user input
     string skills;
-    
     cout << "\n=== ADD NEW RESUME ===\n";
     cout << "Enter your skills (comma-separated, e.g., Python, Java, SQL): ";
     getline(cin, skills);
-    
-    // Format the description to match CSV format
+
     string description = "Experienced professional skilled in " + skills + ".";
-    
-    // Insert the new resume
+    auto start = high_resolution_clock::now();
     insertAtEnd(description);
-    
-    // Show what was added
-    cout << "\n=== NEW RESUME ADDED ===\n";
-    cout << "Resume ID: " << count << endl;
-    cout << "Keywords: ";
-    bool printed = false;
-    for (int i = 0; i < 10; ++i) {
-        if (!tail->keywords[i].empty()) {
-            if (printed) cout << ", ";
-            cout << tail->keywords[i];
-            printed = true;
-        }
-    }
-    if (!printed) cout << "(none)";
-    cout << "\nDescription: " << tail->description << endl;
-    cout << "========================\n";
-    
-    // Ask for confirmation
+    auto end = high_resolution_clock::now();
+    cout << "[Performance] addRecord execution time: "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds\n";
+
     if (confirmAction("A new resume record has been added to the list.")) {
         if (!csvFilename.empty()) {
             saveToCSV(csvFilename);
@@ -239,125 +215,157 @@ void ResumeLinkedList::addRecord() {
     }
 }
 
-// Delete from head
+// void ResumeLinkedList::addRecord() {
+//     string skills;
+//     cout << "\n=== ADD NEW RESUME ===\n";
+//     cout << "Enter your skills (comma-separated, e.g., Python, Java, SQL): ";
+//     getline(cin, skills);
+
+//     string description = "Experienced professional skilled in " + skills + ".";
+
+//     // === Benchmark Mode ===
+//     const int TEST_COUNT = 100000;  // Number of insertions for timing
+//     auto start = high_resolution_clock::now();
+//     for (int i = 0; i < TEST_COUNT; ++i) {
+//         insertAtEnd(description);
+//     }
+//     auto end = high_resolution_clock::now();
+
+//     double avg_ns = duration_cast<nanoseconds>(end - start).count();
+//     cout << "[Performance] addRecord execution time: " << avg_ns << " ns per insert (avg over "
+//          << TEST_COUNT << " inserts)\n";
+
+//     // === Normal Mode Output ===
+//     if (confirmAction("A new resume record has been added to the list.")) {
+//         if (!csvFilename.empty()) {
+//             saveToCSV(csvFilename);
+//         } else {
+//             cout << "Warning: No CSV filename stored. Cannot save to file.\n";
+//         }
+//     } else {
+//         cout << "Change saved in memory only (not written to CSV file).\n";
+//     }
+// }
+
+
+// ---------------- delete from head ----------------
 void ResumeLinkedList::deleteFromHead() {
+    auto start = high_resolution_clock::now();
+
     if (!head) {
         cout << "List is empty. Nothing to delete.\n";
         return;
     }
     
-    // Show what will be deleted
     ResumeNode *temp = head;
     cout << "\n=== DELETING RESUME FROM HEAD ===\n";
     cout << "Resume ID: " << temp->resumeID << endl;
     cout << "Description: " << temp->description << endl;
     cout << "=================================\n";
     
-    // Perform deletion
     head = head->next;
-    if (!head) {
-        tail = nullptr;
-    }
-    
+    if (!head) tail = nullptr;
     delete temp;
     count--;
+
+    auto end = high_resolution_clock::now();
+    cout << "[Performance] deleteFromHead execution time: "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds\n";
     
-    // Ask for confirmation
     if (confirmAction("Resume record has been deleted from the list.")) {
-        if (!csvFilename.empty()) {
-            saveToCSV(csvFilename);
-        } else {
-            cout << "Warning: No CSV filename stored. Cannot save to file.\n";
-        }
+        if (!csvFilename.empty()) saveToCSV(csvFilename);
+        else cout << "Warning: No CSV filename stored.\n";
     } else {
         cout << "Change saved in memory only (not written to CSV file).\n";
     }
 }
 
-// Delete from middle (1-based position)
+// ---------------- delete from middle ----------------
 void ResumeLinkedList::deleteFromMiddle(int position) {
+    auto start = high_resolution_clock::now();
+
     if (position < 1 || position > count) {
         cout << "Invalid position. Must be between 1 and " << count << endl;
         return;
     }
-    
+
     if (position == 1) {
         deleteFromHead();
         return;
     }
-    
+
     if (position == count) {
         deleteFromTail();
         return;
     }
-    
+
     ResumeNode *curr = head;
     ResumeNode *prev = nullptr;
-    
+
     for (int i = 1; i < position; i++) {
         prev = curr;
         curr = curr->next;
     }
-    
-    // Show what will be deleted
+
     cout << "\n=== DELETING RESUME FROM POSITION " << position << " ===\n";
     cout << "Resume ID: " << curr->resumeID << endl;
     cout << "Description: " << curr->description << endl;
     cout << "=================================\n";
-    
-    // Perform deletion
+
     prev->next = curr->next;
     delete curr;
     count--;
-    
-    // Ask for confirmation
+
+    auto end = high_resolution_clock::now();
+    cout << "[Performance] deleteFromMiddle execution time: "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds\n";
+
     if (confirmAction("Resume record has been deleted from the list.")) {
-        if (!csvFilename.empty()) {
-            saveToCSV(csvFilename);
-        } else {
-            cout << "Warning: No CSV filename stored. Cannot save to file.\n";
-        }
+        if (!csvFilename.empty()) saveToCSV(csvFilename);
+        else cout << "Warning: No CSV filename stored.\n";
     } else {
         cout << "Change saved in memory only (not written to CSV file).\n";
     }
 }
 
-// Delete from tail
+// ---------------- delete from tail ----------------
 void ResumeLinkedList::deleteFromTail() {
+    auto start = high_resolution_clock::now();
+
     if (!head) {
         cout << "List is empty. Nothing to delete.\n";
         return;
     }
-    
-    // Show what will be deleted
+
     cout << "\n=== DELETING RESUME FROM TAIL ===\n";
     cout << "Resume ID: " << tail->resumeID << endl;
     cout << "Description: " << tail->description << endl;
     cout << "=================================\n";
-    
+
     if (head == tail) {
         delete head;
         head = tail = nullptr;
         count--;
     } else {
         ResumeNode *curr = head;
-        while (curr->next != tail) {
+        while (curr->next != tail)
             curr = curr->next;
-        }
-        
         delete tail;
         tail = curr;
         tail->next = nullptr;
         count--;
     }
-    
-    // Ask for confirmation
+
+    auto end = high_resolution_clock::now();
+    cout << "[Performance] deleteFromTail execution time: "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds\n";
+
     if (confirmAction("Resume record has been deleted from the list.")) {
-        if (!csvFilename.empty()) {
-            saveToCSV(csvFilename);
-        } else {
-            cout << "Warning: No CSV filename stored. Cannot save to file.\n";
-        }
+        if (!csvFilename.empty()) saveToCSV(csvFilename);
+        else cout << "Warning: No CSV filename stored.\n";
     } else {
         cout << "Change saved in memory only (not written to CSV file).\n";
     }
