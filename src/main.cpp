@@ -52,7 +52,7 @@ int main() {
 
     auto startJobArr = high_resolution_clock::now();
     JobArray jobArray;
-    jobArray.loadJobs(jobCopy);
+    jobArray.loadFromCSV(jobCopy);
     auto endJobArr = high_resolution_clock::now();
     auto jobDurationArr = duration_cast<microseconds>(endJobArr - startJobArr).count();
 
@@ -71,11 +71,11 @@ int main() {
 
     auto startResArr = high_resolution_clock::now();
     ResumeArray resumeArray;
-    resumeArray.loadResumes(resumeCopy);
+    resumeArray.loadFromCSV(resumeCopy);
     auto endResArr = high_resolution_clock::now();
     auto resDurationArr = duration_cast<microseconds>(endResArr - startResArr).count();
 
-    cout << "Loaded " << resumeArray.getSize() << " resume(s) [ARRAY] in "
+    cout << "Loaded " << resumeArray.size() << " resume(s) [ARRAY] in "
          << resDurationArr << " microseconds.\n";
 
     // Menu loop
@@ -119,7 +119,7 @@ int main() {
                         }
 
                         auto start = high_resolution_clock::now();
-                        Matcher::matchTop3ForJob(jobID, jobLinkedList, resumeLinkedList);
+                        Matcher::matchTop3ForJobLinkedList(jobID, jobLinkedList, resumeLinkedList);
                         auto end = high_resolution_clock::now();
                         auto duration = duration_cast<microseconds>(end - start).count();
 
@@ -138,7 +138,7 @@ int main() {
                         }
                         auto start = high_resolution_clock::now();
                         // jobArray uses 0-based indices
-                        jobArray.matchTop3ForJobWithResumes(jobID - 1, resumeArray);
+                        Matcher::matchTop3ForJobArray(jobID - 1, jobArray, resumeArray);
                         auto end = high_resolution_clock::now();
                         auto duration = duration_cast<microseconds>(end - start).count();
                         cout << "\n[Performance] Matching execution time: " << duration << " microseconds\n";
@@ -280,16 +280,15 @@ int main() {
                                 auto start = high_resolution_clock::now();
                                 if (deleteChoice == 1) {
                                     // delete head
-                                    if (resumeArray.getSize() > 0) resumeArray.deleteResume(0);
+                                    if (resumeArray.size() > 0) resumeArray.deleteFromHead();
                                     else cout << "No resumes to delete.\n";
                                 } else if (deleteChoice == 2) {
-                                    int pos; cout << "Enter position (1 to " << resumeArray.getSize() << "): "; cin >> pos;
-                                    if (!cin.fail() && pos >= 1 && pos <= resumeArray.getSize()) resumeArray.deleteResume(pos - 1);
+                                    int pos; cout << "Enter position (1 to " << resumeArray.size() << "): "; cin >> pos;
+                                    if (!cin.fail() && pos >= 1 && pos <= resumeArray.size()) resumeArray.deleteFromMiddle(pos - 1);
                                     else cout << "Invalid position.\n";
                                 } else if (deleteChoice == 3) {
                                     // delete tail
-                                    int sz = resumeArray.getSize();
-                                    if (sz > 0) resumeArray.deleteResume(sz - 1);
+                                    if (resumeArray.size() > 0) resumeArray.deleteFromTail();
                                     else cout << "No resumes to delete.\n";
                                 } else {
                                     cout << "Invalid choice.\n";
@@ -311,7 +310,7 @@ int main() {
                     }
 
                     if (dataChoice == 2) {
-                        jobArray.printJobs(jobArray.getSize());
+                        jobArray.display();
                     }
                     break;
                 }
@@ -323,7 +322,7 @@ int main() {
                     }
 
                     if (dataChoice == 2) {
-                        resumeArray.printResumes(resumeArray.getSize());
+                        resumeArray.display();
                     }
                     break;
                 }
@@ -332,7 +331,7 @@ int main() {
                     // Run full matching
                     if (dataChoice == 1) {
                         auto startMatch = high_resolution_clock::now();
-                        Matcher::findTopMatches(jobLinkedList, resumeLinkedList);
+                        Matcher::findTopMatchesLinkedList(jobLinkedList, resumeLinkedList);
                         auto endMatch = high_resolution_clock::now();
                         auto matchDuration = duration_cast<microseconds>(endMatch - startMatch).count();
 
@@ -340,7 +339,7 @@ int main() {
                     }
 
                     if (dataChoice == 2) {
-                        jobArray.findTopMatchesWithResumes(resumeArray);
+                        Matcher::findTopMatchesArray(jobArray, resumeArray);
                     }
                     break;
                 }
@@ -349,11 +348,10 @@ int main() {
 
         else if (choice == 0) {
             cout << "\n=== Final Execution Time Summary ===\n";
-            cout << "Initial Job Loading:    " << jobDuration << " microseconds\n";
-            cout << "Initial Resume Loading: " << resumeDuration << " microseconds\n";
-            cout << "Array Job Loading:      " << jobDurationArr << " microseconds\n";
-            cout << "Array Resume Loading:   " << resDurationArr << " microseconds\n";
-            cout << "Total Initial:          " << (jobDuration + resumeDuration) << " microseconds\n";
+            cout << "Linked List Job Loading:    " << jobDuration << " microseconds\n";
+            cout << "Linked List Resume Loading: " << resumeDuration << " microseconds\n";
+            cout << "Array Job Loading:          " << jobDurationArr << " microseconds\n";
+            cout << "Array Resume Loading:       " << resDurationArr << " microseconds\n";
             cout << "\nThank you for using the Job & Resume Matching System!\n";
         } 
 

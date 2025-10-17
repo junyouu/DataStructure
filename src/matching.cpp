@@ -4,22 +4,22 @@
 #include <cctype>
 using namespace std;
 
-// helper function to lowercase string
+// helper function
 string toLower(const string &s) {
     string result = s;
     transform(result.begin(), result.end(), result.begin(), ::tolower);
     return result;
 }
 
-void Matcher::findTopMatches(JobLinkedList &jobs, ResumeLinkedList &resumes) {
+/* ============================
+   LINKED LIST VERSION
+   ============================ */
+void Matcher::findTopMatchesLinkedList(JobLinkedList &jobs, ResumeLinkedList &resumes) {
     JobNode *job = jobs.getHead();
+    cout << "\n=== Matching Results (Top 3 Candidates for Each Job) [Linked List] ===\n";
 
-    cout << "\n=== Matching Results (Top 3 Candidates for Each Job) ===\n";
-
-    // loop through each job
     while (job != nullptr) {
-        cout << "\nJob [" << job->jobID << "]:\n";
-        cout << "Title: " << job->title << "\n";
+        cout << "\nJob [" << job->jobID << "]: " << job->title << "\n";
         cout << "Keywords: ";
         bool printed = false;
         for (int i = 0; i < 10; ++i) {
@@ -30,164 +30,173 @@ void Matcher::findTopMatches(JobLinkedList &jobs, ResumeLinkedList &resumes) {
             }
         }
         if (!printed) cout << "(none)";
-        cout << "\nOriginal Text: " << job->description << "\n";
+        cout << "\n";
 
-        // if no job keywords, skip
         int jobKeywordCount = 0;
         for (int i = 0; i < 10; ++i)
             if (!job->keywords[i].empty()) jobKeywordCount++;
-
         if (jobKeywordCount == 0) {
-            cout << "No keywords found for this job.\n";
+            cout << "No keywords found.\n";
             job = job->next;
             continue;
         }
 
-        // store matches as pair<resumeID, rate>
-        struct Match {
-            int resumeID;
-            double rate;
-            string desc;
-        };
-        Match matches[100];
-        int matchCount = 0;
+        struct Match { int resumeID; double rate; string desc; };
+        Match matches[100]; int matchCount = 0;
 
-        // loop through resumes
         ResumeNode *resume = resumes.getHead();
         while (resume != nullptr && matchCount < 100) {
             int matchKeywords = 0;
-
             for (int i = 0; i < 10; ++i) {
                 if (job->keywords[i].empty()) continue;
                 string jobKey = toLower(job->keywords[i]);
-
                 for (int j = 0; j < 10; ++j) {
                     if (resume->keywords[j].empty()) continue;
-                    string resumeKey = toLower(resume->keywords[j]);
-
-                    if (jobKey == resumeKey) {
+                    if (jobKey == toLower(resume->keywords[j])) {
                         matchKeywords++;
-                        break; // prevent double counting
+                        break;
                     }
                 }
             }
-
-            double rate = (double)matchKeywords / jobKeywordCount * 100.0;
-
-            matches[matchCount].resumeID = resume->resumeID;
-            matches[matchCount].rate = rate;
-            matches[matchCount].desc = resume->description;
-            matchCount++;
-
+            matches[matchCount++] = { resume->resumeID, (double)matchKeywords / jobKeywordCount * 100.0, resume->description };
             resume = resume->next;
         }
 
-        // sort by rate descending
-        sort(matches, matches + matchCount, [](const Match &a, const Match &b) {
-            return a.rate > b.rate;
-        });
+        sort(matches, matches + matchCount, [](auto &a, auto &b){ return a.rate > b.rate; });
 
-        cout << "Candidate:\n";
-        int top = min(3, matchCount);
-        for (int i = 0; i < top; ++i) {
-            cout << i + 1 << ". Resume [" << matches[i].resumeID << "] ("
-                 << matches[i].rate << "%)\n";
-            cout << matches[i].desc << "\n\n";
-        }
-
+        for (int i = 0; i < min(3, matchCount); ++i)
+            cout << i + 1 << ". Resume [" << matches[i].resumeID << "] (" << matches[i].rate << "%)\n"
+                 << matches[i].desc << "\n";
         job = job->next;
     }
 }
 
-// Match top 3 resumes for a specific job ID
-void Matcher::matchTop3ForJob(int jobID, JobLinkedList &jobs, ResumeLinkedList &resumes) {
-    // Find the job by ID
-    JobNode *job = jobs.getHead();
-    while (job != nullptr) {
-        if (job->jobID == jobID) {
-            break;
-        }
-        job = job->next;
-    }
-
-    if (job == nullptr) {
+void Matcher::matchTop3ForJobLinkedList(int jobID, JobLinkedList &jobs, ResumeLinkedList &resumes) {
+    JobNode *job = jobs.findJobByID(jobID);
+    if (!job) {
         cout << "Job ID " << jobID << " not found.\n";
         return;
     }
 
-    cout << "\n=== Matching Top 3 Resumes for Job ID " << jobID << " ===\n";
-    cout << "Job Title: " << job->title << "\n";
-    cout << "Job Keywords: ";
-    bool printed = false;
-    for (int i = 0; i < 10; ++i) {
-        if (!job->keywords[i].empty()) {
-            if (printed) cout << ", ";
-            cout << job->keywords[i];
-            printed = true;
-        }
-    }
-    if (!printed) cout << "(none)";
-    cout << "\n\n";
-
-    // Count job keywords
+    cout << "\n=== Matching Top 3 Resumes for Job [" << jobID << "] [Linked List] ===\n";
     int jobKeywordCount = 0;
-    for (int i = 0; i < 10; ++i)
-        if (!job->keywords[i].empty()) jobKeywordCount++;
-
+    for (int i = 0; i < 10; ++i) if (!job->keywords[i].empty()) jobKeywordCount++;
     if (jobKeywordCount == 0) {
         cout << "No keywords found for this job.\n";
         return;
     }
 
-    // Store matches
-    struct Match {
-        int resumeID;
-        double rate;
-        string desc;
-    };
-    Match matches[100];
-    int matchCount = 0;
+    struct Match { int resumeID; double rate; string desc; };
+    Match matches[100]; int matchCount = 0;
 
-    // Loop through resumes
     ResumeNode *resume = resumes.getHead();
-    while (resume != nullptr && matchCount < 100) {
+    while (resume && matchCount < 100) {
         int matchKeywords = 0;
-
         for (int i = 0; i < 10; ++i) {
             if (job->keywords[i].empty()) continue;
             string jobKey = toLower(job->keywords[i]);
-
             for (int j = 0; j < 10; ++j) {
                 if (resume->keywords[j].empty()) continue;
-                string resumeKey = toLower(resume->keywords[j]);
-
-                if (jobKey == resumeKey) {
+                if (jobKey == toLower(resume->keywords[j])) {
                     matchKeywords++;
                     break;
                 }
             }
         }
-
-        double rate = (double)matchKeywords / jobKeywordCount * 100.0;
-
-        matches[matchCount].resumeID = resume->resumeID;
-        matches[matchCount].rate = rate;
-        matches[matchCount].desc = resume->description;
-        matchCount++;
-
+        matches[matchCount++] = { resume->resumeID, (double)matchKeywords / jobKeywordCount * 100.0, resume->description };
         resume = resume->next;
     }
 
-    // Sort by rate descending
-    sort(matches, matches + matchCount, [](const Match &a, const Match &b) {
-        return a.rate > b.rate;
-    });
+    sort(matches, matches + matchCount, [](auto &a, auto &b){ return a.rate > b.rate; });
+    for (int i = 0; i < min(3, matchCount); ++i)
+        cout << i + 1 << ". Resume [" << matches[i].resumeID << "] (" << matches[i].rate << "%)\n"
+             << matches[i].desc << "\n";
+}
 
-    cout << "Top 3 Candidates:\n";
-    int top = min(3, matchCount);
-    for (int i = 0; i < top; ++i) {
-        cout << i + 1 << ". Resume [" << matches[i].resumeID << "] - Match Rate: "
-             << matches[i].rate << "%\n";
-        cout << "   " << matches[i].desc << "\n\n";
+/* ============================
+   ARRAY VERSION
+   ============================ */
+void Matcher::findTopMatchesArray(JobArray &jobs, ResumeArray &resumes) {
+    cout << "\n=== Matching Results (Top 3 Candidates for Each Job) [Array] ===\n";
+
+    for (int i = 0; i < jobs.getSize(); ++i) {
+        const Job &job = jobs.getJob(i);
+        cout << "\nJob [" << i + 1 << "]: " << job.title << "\n";
+
+        int jobKeywordCount = 0;
+        for (int k = 0; k < 10; ++k)
+            if (!job.keywords[k].empty()) jobKeywordCount++;
+        if (jobKeywordCount == 0) {
+            cout << "No keywords found.\n";
+            continue;
+        }
+
+        struct Match { int resumeIndex; double rate; string desc; };
+        Match matches[100]; int matchCount = 0;
+
+        for (int j = 0; j < resumes.size() && matchCount < 100; ++j) {
+            const Resume &resume = resumes.getResume(j);
+            int matchKeywords = 0;
+            for (int a = 0; a < 10; ++a) {
+                if (job.keywords[a].empty()) continue;
+                string jobKey = toLower(job.keywords[a]);
+                for (int b = 0; b < 10; ++b) {
+                    if (resume.keywords[b].empty()) continue;
+                    if (jobKey == toLower(resume.keywords[b])) {
+                        matchKeywords++;
+                        break;
+                    }
+                }
+            }
+            matches[matchCount++] = { j, (double)matchKeywords / jobKeywordCount * 100.0, resume.description };
+        }
+
+        sort(matches, matches + matchCount, [](auto &a, auto &b){ return a.rate > b.rate; });
+        for (int t = 0; t < min(3, matchCount); ++t)
+            cout << t + 1 << ". Resume [" << matches[t].resumeIndex + 1 << "] ("
+                 << matches[t].rate << "%)\n" << matches[t].desc << "\n";
     }
+}
+
+void Matcher::matchTop3ForJobArray(int jobIndex, JobArray &jobs, ResumeArray &resumes) {
+    if (jobIndex < 0 || jobIndex >= jobs.getSize()) {
+        cout << "Invalid job index.\n";
+        return;
+    }
+
+    const Job &job = jobs.getJob(jobIndex);
+    cout << "\n=== Matching Top 3 Resumes for Job [" << jobIndex + 1 << "] [Array] ===\n";
+
+    int jobKeywordCount = 0;
+    for (int i = 0; i < 10; ++i)
+        if (!job.keywords[i].empty()) jobKeywordCount++;
+    if (jobKeywordCount == 0) {
+        cout << "No keywords found.\n";
+        return;
+    }
+
+    struct Match { int resumeIndex; double rate; string desc; };
+    Match matches[100]; int matchCount = 0;
+
+    for (int j = 0; j < resumes.size() && matchCount < 100; ++j) {
+        const Resume &resume = resumes.getResume(j);
+        int matchKeywords = 0;
+        for (int a = 0; a < 10; ++a) {
+            if (job.keywords[a].empty()) continue;
+            string jobKey = toLower(job.keywords[a]);
+            for (int b = 0; b < 10; ++b) {
+                if (resume.keywords[b].empty()) continue;
+                if (jobKey == toLower(resume.keywords[b])) {
+                    matchKeywords++;
+                    break;
+                }
+            }
+        }
+        matches[matchCount++] = { j, (double)matchKeywords / jobKeywordCount * 100.0, resume.description };
+    }
+
+    sort(matches, matches + matchCount, [](auto &a, auto &b){ return a.rate > b.rate; });
+    for (int i = 0; i < min(3, matchCount); ++i)
+        cout << i + 1 << ". Resume [" << matches[i].resumeIndex + 1 << "] (" << matches[i].rate << "%)\n"
+             << matches[i].desc << "\n";
 }

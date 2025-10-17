@@ -3,177 +3,269 @@
 #include <fstream>
 #include <sstream>
 #include <chrono>
+#include <stdexcept>
+#include <algorithm>
+#include <cctype>
 using namespace std;
 using namespace std::chrono;
 
-ResumeArray::ResumeArray(): resumes(nullptr), resumesCount(0), resumesCapacity(0) {}
+ResumeArray::ResumeArray() : resumes(nullptr), resumesCount(0), resumesCapacity(0) {}
 
-ResumeArray::~ResumeArray() { delete[] resumes; }
+ResumeArray::~ResumeArray() {
+    delete[] resumes;
+}
 
 void ResumeArray::ensureCapacity(int minCapacity) {
     if (resumesCapacity >= minCapacity) return;
-    int newCap = resumesCapacity == 0 ? 8 : resumesCapacity * 2;
+    int newCap = (resumesCapacity == 0) ? 100 : resumesCapacity * 2;
     while (newCap < minCapacity) newCap *= 2;
+
     Resume *temp = new Resume[newCap];
-    for (int i = 0; i < resumesCount; ++i) temp[i] = resumes[i];
+    for (int i = 0; i < resumesCount; ++i)
+        temp[i] = resumes[i];
     delete[] resumes;
     resumes = temp;
     resumesCapacity = newCap;
 }
 
-// 1. Load CSV
-void ResumeArray::loadResumes(const std::string& filename) {
+// ===============================
+// Load and Save
+// ===============================
+void ResumeArray::loadFromCSV(const string &filename) {
     auto start = high_resolution_clock::now();
-    
-    std::ifstream file(filename);
-    if (!file.is_open()) { std::cerr << "Error opening file: " << filename << std::endl; return; }
 
-    // remember filename so we can save back to same temp file
+    ifstream file(filename);
+    if (!file.is_open()) {
+        cerr << "Error: Cannot open " << filename << endl;
+        return;
+    }
+
     csvFilename = filename;
+    string line;
+    getline(file, line); // skip header
 
-    std::string line;
-    std::getline(file, line); // skip header
-    
-    // Read each line as a description (matching linked list format)
-    while (std::getline(file, line)) {
+    resumesCount = 0; // reset
+    int id = 1;
+
+    while (getline(file, line)) {
         if (line.empty()) continue;
-        
-        // Remove surrounding quotes if present
-        std::string description = line;
-        if (!description.empty() && description.front() == '"' && description.back() == '"') {
-            description = description.substr(1, description.size() - 2);
-        }
-        
-        Resume r;
-        r.id = "";
-        r.name = "";
-        r.skills = description;  // Store the full description in skills field
-        r.experience = "";
+
+        // Remove enclosing quotes
+        if (line.front() == '"' && line.back() == '"')
+            line = line.substr(1, line.size() - 2);
 
         ensureCapacity(resumesCount + 1);
-        resumes[resumesCount++] = r;
-    }
-    
-    auto end = high_resolution_clock::now();
-    auto duration = duration_cast<microseconds>(end - start).count();
-    std::cout << "[Performance] Load execution time: " << duration << " microseconds\n";
-}
+        Resume &r = resumes[resumesCount++];
+        r.resumeID = id++;
+        r.description = line;
 
-void ResumeArray::saveToCSV(const std::string &filename) {
-    auto start = high_resolution_clock::now();
-    std::ofstream file(filename);
-    if (!file.is_open()) { std::cerr << "Error: cannot open " << filename << " for writing\n"; return; }
-    // Write header matching linked list format
-    file << "resume" << std::endl;
-    
-    // Write all records (just the skills field which contains the description)
-    for (int i = 0; i < resumesCount; ++i) {
-        file << '"' << resumes[i].skills << '"' << std::endl;
-    }
-    file.close();
-    std::cout << "Successfully saved " << resumesCount << " records to " << filename << std::endl;
-    
-    auto end = high_resolution_clock::now();
-    auto duration = duration_cast<microseconds>(end - start).count();
-    std::cout << "[Performance] Save execution time: " << duration << " microseconds\n";
-}
+        // --- Keyword Extraction Logic (like JobArray::extractInfo) ---
+        string desc = r.description;
+        transform(desc.begin(), desc.end(), desc.begin(), ::tolower);
 
-bool ResumeArray::confirmAction(const std::string &message) {
-    std::cout << "\n" << message << std::endl;
-    std::cout << "Do you want to save this change to the CSV file? (y/n): ";
-    char c; std::cin >> c; std::cin.ignore();
-    return (c == 'y' || c == 'Y');
-}
+        // Find “skilled in” or “experienced in” phrase
+        size_t phrasePos = desc.find("skilled in");
+        if (phrasePos == string::npos)
+            phrasePos = desc.find("experienced in");
+        if (phrasePos == string::npos)
+            phrasePos = desc.find("proficient in");
 
-// 2. Match resumes
-void ResumeArray::matchResumes(const Resume *otherResumes, int otherCount) {
-    int count = 0;
-    for (int i = 0; i < resumesCount; ++i) {
-        for (int j = 0; j < otherCount; ++j) {
-            if (resumes[i].skills == otherResumes[j].skills) count++;
+        string skills;
+        if (phrasePos != string::npos) {
+            size_t startPos = phrasePos + (desc.find("in", phrasePos) - phrasePos) + 2;
+            size_t endPos = r.description.find('.', startPos);
+            if (endPos == string::npos)
+                endPos = r.description.length();
+
+            skills = r.description.substr(startPos, endPos - startPos);
+        } else {
+            // fallback: just take first 10 words
+            stringstream ss(r.description);
+            string word;
+            int k = 0;
+            while (ss >> word && k < 10)
+                r.keywords[k++] = word;
+            for (int k2 = k; k2 < 10; ++k2)
+                r.keywords[k2] = "";
+            continue;
         }
+
+        // Split skills by comma
+        stringstream ss(skills);
+        string token;
+        int idx = 0;
+        while (getline(ss, token, ',') && idx < 10) {
+            token.erase(0, token.find_first_not_of(" "));
+            token.erase(token.find_last_not_of(" ") + 1);
+            if (!token.empty())
+                r.keywords[idx++] = token;
+        }
+        for (int i = idx; i < 10; ++i)
+            r.keywords[i] = "";
     }
-    std::cout << "Matched " << count << " resumes.\n";
+
+    file.close();
+
+    auto end = high_resolution_clock::now();
+    cout << "[Performance] Loaded " << resumesCount
+         << " resume(s) [ARRAY] in "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds.\n";
 }
 
-// 3. Match 3 jobs
-void ResumeArray::matchThreeJobs(int resumeIndex) {
-    if (resumeIndex < 0 || resumeIndex >= resumesCount) { std::cout << "Invalid index.\n"; return; }
-    std::cout << "Matching 3 jobs for resume: " << resumes[resumeIndex].skills << std::endl;
-}
 
-// 4. Add resume
-void ResumeArray::addResume(const Resume& newResume) {
-    ensureCapacity(resumesCount + 1);
-    resumes[resumesCount++] = newResume;
-}
-
-// Interactive add record (matching linked list interface)
-void ResumeArray::addRecord() {
-    std::string skills;
-    std::cout << "\n=== ADD NEW RESUME (Array) ===\n";
-    std::cout << "Enter your skills (comma-separated, e.g., Python, Java, SQL): ";
-    std::getline(std::cin, skills);
-    
-    // Format the description to match linked list format
-    std::string description = "Experienced professional skilled in " + skills + ".";
-    
-    Resume r;
-    r.id = "";
-    r.name = "";
-    r.skills = description;  // Store formatted description in skills field
-    r.experience = "";
-    
-    ensureCapacity(resumesCount + 1);
-    resumes[resumesCount++] = r;
-    
-    std::cout << "\n=== NEW RESUME ADDED ===\n";
-    std::cout << "Resume ID: " << resumesCount << "\n";
-    std::cout << "Description: " << r.skills << "\n";
-    
-    if (!csvFilename.empty()) {
-        if (confirmAction("A new resume has been added to the array.")) saveToCSV(csvFilename);
-        else std::cout << "Change saved in memory only.\n";
-    } else {
-        std::cout << "Warning: no CSV filename stored. Cannot auto-save.\n";
+void ResumeArray::saveToCSV(const string &filename) {
+    auto start = high_resolution_clock::now();
+    ofstream file(filename);
+    if (!file.is_open()) {
+        cerr << "Error: cannot open " << filename << " for writing.\n";
+        return;
     }
+
+    file << "resume" << endl;
+    for (int i = 0; i < resumesCount; ++i)
+        file << '"' << resumes[i].description << '"' << endl;
+
+    file.close();
+    cout << "Successfully saved " << resumesCount << " record(s) to " << filename << endl;
+
+    auto end = high_resolution_clock::now();
+    cout << "[Performance] Save execution time: "
+         << duration_cast<microseconds>(end - start).count()
+         << " microseconds.\n";
 }
 
-// 5. Delete resume
-void ResumeArray::deleteResume(int position) {
-    if (resumesCount == 0) { std::cout << "No resumes to delete.\n"; return; }
-    if (position < 0 || position >= resumesCount) { std::cout << "Invalid position.\n"; return; }
-    for (int i = position; i + 1 < resumesCount; ++i) resumes[i] = resumes[i+1];
-    --resumesCount;
-    std::cout << "Deleted resume at position " << position << std::endl;
-    if (!csvFilename.empty()) {
-        if (confirmAction("A resume record has been deleted from the array.")) saveToCSV(csvFilename);
-        else std::cout << "Change saved in memory only.\n";
-    } else {
-        std::cout << "Warning: no CSV filename stored. Cannot auto-save.\n";
-    }
+// ===============================
+// Clear
+// ===============================
+void ResumeArray::clear() {
+    delete[] resumes;
+    resumes = nullptr;
+    resumesCount = 0;
+    resumesCapacity = 0;
 }
 
-
-void ResumeArray::printResumes(int count) const {
+// ===============================
+// Display
+// ===============================
+void ResumeArray::display() const {
     auto start = high_resolution_clock::now();
 
-    cout << "\n========================================\n";
-    cout << "              Resume List\n";
-    cout << "========================================\n";
+    cout << "\n=== Resume List ===\n";
 
     if (resumesCount == 0) {
         cout << "(No resumes loaded)\n";
     } else {
-        for (int i = 0; i < count && i < resumesCount; ++i) {
-            cout << "ID: " << resumes[i].id << "\n";
-            cout << "Name: " << resumes[i].name << "\n";
-            cout << "Skills: " << (resumes[i].skills.empty() ? "(none)" : resumes[i].skills) << "\n";
-            cout << "Experience: " << (resumes[i].experience.empty() ? "(none)" : resumes[i].experience) << "\n";
+        for (int i = 0; i < resumesCount; ++i) {
+            cout << "ID: " << resumes[i].resumeID << "\n";
+            cout << "Keywords: ";
+
+            bool printed = false;
+            for (int j = 0; j < 10; ++j) {
+                if (!resumes[i].keywords[j].empty()) {
+                    if (printed) cout << ", ";
+                    cout << resumes[i].keywords[j];
+                    printed = true;
+                }
+            }
+            if (!printed) cout << "(none)";
+            cout << "\nOriginal Text: " << resumes[i].description << "\n\n";
         }
     }
 
     auto end = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(end - start).count();
     cout << "[Performance] Display execution time: " << duration << " microseconds\n";
+}
+
+
+// ===============================
+// Add Record
+// ===============================
+void ResumeArray::addRecord() {
+    cout << "\n=== ADD NEW RESUME (Array) ===\n";
+    string desc;
+    cout << "Enter resume description: ";
+    getline(cin, desc);
+
+    Resume r;
+    r.resumeID = resumesCount + 1;
+    r.description = desc;
+
+    // Basic keyword extraction
+    stringstream ss(desc);
+    string word;
+    int k = 0;
+    while (ss >> word && k < 10)
+        r.keywords[k++] = word;
+
+    ensureCapacity(resumesCount + 1);
+    resumes[resumesCount++] = r;
+
+    cout << "\nResume added successfully.\n";
+
+    if (!csvFilename.empty()) {
+        if (confirmAction("Save this change to CSV?"))
+            saveToCSV(csvFilename);
+        else
+            cout << "Change saved in memory only.\n";
+    }
+}
+
+// ===============================
+// Delete Functions
+// ===============================
+void ResumeArray::deleteFromHead() {
+    if (resumesCount == 0) {
+        cout << "No resumes to delete.\n";
+        return;
+    }
+    for (int i = 1; i < resumesCount; ++i)
+        resumes[i - 1] = resumes[i];
+    resumesCount--;
+    cout << "Deleted first resume.\n";
+
+    if (!csvFilename.empty() && confirmAction("Save this change to CSV?"))
+        saveToCSV(csvFilename);
+}
+
+void ResumeArray::deleteFromMiddle(int position) {
+    if (resumesCount == 0) {
+        cout << "No resumes to delete.\n";
+        return;
+    }
+    if (position < 1 || position > resumesCount) {
+        cout << "Invalid position.\n";
+        return;
+    }
+    for (int i = position; i < resumesCount; ++i)
+        resumes[i - 1] = resumes[i];
+    resumesCount--;
+    cout << "Deleted resume at position " << position << ".\n";
+
+    if (!csvFilename.empty() && confirmAction("Save this change to CSV?"))
+        saveToCSV(csvFilename);
+}
+
+void ResumeArray::deleteFromTail() {
+    if (resumesCount == 0) {
+        cout << "No resumes to delete.\n";
+        return;
+    }
+    resumesCount--;
+    cout << "Deleted last resume.\n";
+
+    if (!csvFilename.empty() && confirmAction("Save this change to CSV?"))
+        saveToCSV(csvFilename);
+}
+
+// ===============================
+// Confirm Action
+// ===============================
+bool ResumeArray::confirmAction(const string &message) {
+    cout << message << " (y/n): ";
+    char c;
+    cin >> c;
+    cin.ignore();
+    return (c == 'y' || c == 'Y');
 }

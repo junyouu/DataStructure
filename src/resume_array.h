@@ -2,54 +2,53 @@
 #define RESUME_ARRAY_H
 
 #include <string>
+#include <stdexcept>
+using namespace std;
 
 struct Resume {
-    std::string id;
-    std::string name;
-    std::string skills;
-    std::string experience;
+    int resumeID;            // auto ID
+    string description;      // full text
+    string keywords[10];     // max 10 extracted keywords
 };
 
 class ResumeArray {
 private:
-    Resume *resumes;
-    int resumesCount;
-    int resumesCapacity;
-    std::string csvFilename; // store filename used to load/save temp CSV
+    Resume *resumes;         // dynamic array of Resume
+    int resumesCount;        // number of resumes currently stored
+    int resumesCapacity;     // allocated capacity
+    string csvFilename;      // store filename used to load/save temp CSV
 
-    void ensureCapacity(int minCapacity);
+    void ensureCapacity(int minCapacity);  // increase capacity when needed
 
 public:
     ResumeArray();
     ~ResumeArray();
 
-    // 1. Load resumes from CSV
-    void loadResumes(const std::string& filename);
+    // Load and Save (same logic as LL version)
+    void loadFromCSV(const string &filename);
+    void saveToCSV(const string &filename);
 
-    // Save resumes back to CSV (will write to the provided filename)
-    void saveToCSV(const std::string &filename);
+    // Clear array
+    void clear();
 
-    bool confirmAction(const std::string &message);
+    // Size and access
+    int size() const { return resumesCount; }
+    const Resume& getResume(int index) const {
+        if (index < 0 || index >= resumesCount) throw out_of_range("ResumeArray::getResume index out of range");
+        return resumes[index];
+    }
 
-    // 2. Match with other resumes (otherResumes is raw array)
-    void matchResumes(const Resume *otherResumes, int otherCount);
+    // Display preview
+    void display() const;
 
-    // 3. Input resume number and match 3 jobs
-    void matchThreeJobs(int resumeIndex);
+    // CRUD (same naming as linked list)
+    void addRecord();                    // interactive add
+    void deleteFromHead();               // delete first
+    void deleteFromMiddle(int position); // delete from middle (1-based)
+    void deleteFromTail();               // delete last
 
-    // 4. Add new resume
-    void addResume(const Resume& newResume);
-    
-    // Interactive add record (matching linked list interface)
-    void addRecord();
-
-    // 5. Delete resume (head, middle, tail)
-    void deleteResume(int position);
-
-    // Utility
-    int getSize() const { return resumesCount; }
-    const Resume& getResume(int index) const { return resumes[index]; }
-    void printResumes(int count = 5) const;
+    // Confirmation utility
+    bool confirmAction(const string &message);
 };
 
 #endif
