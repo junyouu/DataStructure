@@ -8,6 +8,7 @@
 #include <cctype>
 #include <windows.h>
 #include <psapi.h>
+#include "utility.h"
 #pragma comment(lib, "psapi.lib")
 using namespace std;
 using namespace std::chrono;
@@ -35,6 +36,7 @@ void ResumeArray::ensureCapacity(int minCapacity) {
 // Load and Save
 // ===============================
 void ResumeArray::loadFromCSV(const string &filename) {
+    double memBefore = getCurrentMemoryKB();  // record before loading
     auto start = high_resolution_clock::now();
 
     ifstream file(filename);
@@ -96,19 +98,17 @@ void ResumeArray::loadFromCSV(const string &filename) {
     file.close();
 
     auto end = high_resolution_clock::now();
-    cout << "[Performance] loadFromCSV [Resume Array] execution time: "
-         << duration_cast<microseconds>(end - start).count()
-         << " microseconds\n";
+    auto duration = duration_cast<microseconds>(end - start).count();
 
-    // ===== MEMORY USAGE (Windows) =====
-    PROCESS_MEMORY_COUNTERS_EX pmc;
-    if (GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc))) {
-        cout << "[Memory] loadFromCSV [Resume Array] memory usage: "
-             << pmc.WorkingSetSize / 1024.0 << " KB\n" << endl;
-    } else {
-        cout << "[Memory] Unable to retrieve memory usage info.\n";
-    }
+    double memAfter = getCurrentMemoryKB();  // record after loading
+
+    cout << "[Performance] loadFromCSV [Resume Array] execution time: "
+         << duration << " microseconds\n";
+
+    cout << "[Memory] loadFromCSV [Resume Array] memory usage: "
+         << (memAfter - memBefore) << " KB\n\n";
 }
+
 
 
 void ResumeArray::saveToCSV(const string &filename) {

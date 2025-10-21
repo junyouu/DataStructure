@@ -7,6 +7,7 @@
 #include <chrono>
 #include <windows.h>
 #include <psapi.h>
+#include "utility.h"
 using namespace std;
 using namespace std::chrono;
 
@@ -86,6 +87,7 @@ void JobArray::insertAtEnd(const string &desc) {
 
 // ---------------- loadFromCSV ----------------
 void JobArray::loadFromCSV(const string &filename) {
+    double memBefore = getCurrentMemoryKB();  // record before loading
     auto start = high_resolution_clock::now();
 
     ifstream file(filename);
@@ -96,7 +98,7 @@ void JobArray::loadFromCSV(const string &filename) {
 
     csvFilename = filename;
     string line;
-    getline(file, line); // Skip header
+    getline(file, line); // skip header
 
     while (getline(file, line)) {
         if (line.empty()) continue;
@@ -106,18 +108,14 @@ void JobArray::loadFromCSV(const string &filename) {
     file.close();
 
     auto end = high_resolution_clock::now();
+    double memAfter = getCurrentMemoryKB();  // record after loading
+
     cout << "[Performance] loadFromCSV [Job Array] execution time: "
          << duration_cast<microseconds>(end - start).count()
          << " microseconds\n";
 
-    // ===== MEMORY USAGE (Windows) =====
-    PROCESS_MEMORY_COUNTERS_EX pmc;
-    if (GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc))) {
-        cout << "[Memory] loadFromCSV [Job Array] memory usage: "
-             << pmc.WorkingSetSize / 1024.0 << " KB\n" << endl;
-    } else {
-        cout << "[Memory] Unable to retrieve memory usage info.\n";
-    }
+    cout << "[Memory] loadFromCSV [Job Array] memory space: "
+         << (memAfter - memBefore) << " KB\n\n";
 }
 
 
