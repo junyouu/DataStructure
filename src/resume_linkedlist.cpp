@@ -58,7 +58,7 @@ void printMemoryUsage() {
     PROCESS_MEMORY_COUNTERS memInfo;
     GetProcessMemoryInfo(GetCurrentProcess(), &memInfo, sizeof(memInfo));
     SIZE_T memUsedKB = memInfo.WorkingSetSize / 1024;
-    cout << "[Memory Usage] Current memory: " << memUsedKB << " KB\n\n";
+    cout << "[Memory Usage] memory usage: " << memUsedKB << " KB\n\n";
 }
 
 
