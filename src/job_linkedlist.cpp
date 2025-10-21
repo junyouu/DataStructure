@@ -7,6 +7,7 @@
 #include <chrono>
 #include <windows.h>
 #include <psapi.h>
+#include "utility.h"
 using namespace std;
 using namespace std::chrono;
 
@@ -79,6 +80,7 @@ void JobLinkedList::insertAtEnd(const string &desc) {
 
 // ---------------- loadFromCSV ----------------
 void JobLinkedList::loadFromCSV(const string &filename) {
+    double memBefore = getCurrentMemoryKB();  // record before loading
     auto start = high_resolution_clock::now();
 
     ifstream file(filename);
@@ -103,17 +105,14 @@ void JobLinkedList::loadFromCSV(const string &filename) {
 
     auto end = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(end - start).count();
-    cout << "[Performance] loadFromCSV [Job Linked List] execution time: " 
+
+    double memAfter = getCurrentMemoryKB();  // record after loading
+
+    cout << "[Performance] loadFromCSV [Job Linked List] execution time: "
          << duration << " microseconds\n";
 
-    // ===== MEMORY USAGE (Windows) =====
-    PROCESS_MEMORY_COUNTERS_EX pmc;
-    if (GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc))) {
-        cout << "[Memory] loadFromCSV [Job Linked List] memory usage: "
-             << pmc.WorkingSetSize / 1024.0 << " KB\n" << endl;
-    } else {
-        cout << "[Memory] Unable to retrieve memory usage info.\n";
-    }
+    cout << "[Memory] loadFromCSV [Job Linked List] memory usage: "
+         << (memAfter - memBefore) << " KB\n\n";
 }
 
 // ---------------- display ----------------

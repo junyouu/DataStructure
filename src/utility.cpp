@@ -1,6 +1,8 @@
 #include "utility.h"
 #include <fstream>
 #include <iostream>
+#include <windows.h>
+#include <psapi.h>
 
 using namespace std;
 
@@ -31,4 +33,12 @@ void displayMenu() {
     cout << "0. Exit\n";
     cout << "========================================\n";
     cout << "Enter your choice: ";
+}
+
+double getCurrentMemoryKB() {
+    PROCESS_MEMORY_COUNTERS_EX pmc;
+    if (GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc))) {
+        return pmc.WorkingSetSize / 1024.0;
+    }
+    return 0.0;
 }

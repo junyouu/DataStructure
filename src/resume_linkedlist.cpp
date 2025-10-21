@@ -7,6 +7,7 @@
 #include <chrono>
 #include <windows.h>
 #include <psapi.h>
+#include "utility.h"
 using namespace std;
 using namespace std::chrono;
 
@@ -82,6 +83,7 @@ void ResumeLinkedList::insertAtEnd(const string &desc) {
 
 // ---------------- load file ----------------
 void ResumeLinkedList::loadFromCSV(const string &filename) {
+    double memBefore = getCurrentMemoryKB();  // record before loading
     auto start = high_resolution_clock::now();
     
     ifstream file(filename);
@@ -105,11 +107,15 @@ void ResumeLinkedList::loadFromCSV(const string &filename) {
     file.close();
     
     auto end = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(end - start).count();
+
+    double memAfter = getCurrentMemoryKB();  // record after loading
+
     cout << "[Performance] loadFromCSV [Resume Linked List] execution time: "
-         << duration_cast<microseconds>(end - start).count()
-         << " microseconds\n";
-    // ✅ Print memory usage after loading
-    printMemoryUsage();
+         << duration << " microseconds\n";
+
+    cout << "[Memory] loadFromCSV [Resume Linked List] memory usage: "
+         << (memAfter - memBefore) << " KB\n\n";
 }
 
 
