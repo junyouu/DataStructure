@@ -6,6 +6,9 @@
 #include <stdexcept>
 #include <algorithm>
 #include <cctype>
+#include <windows.h>
+#include <psapi.h>
+#pragma comment(lib, "psapi.lib")
 using namespace std;
 using namespace std::chrono;
 
@@ -44,13 +47,12 @@ void ResumeArray::loadFromCSV(const string &filename) {
     string line;
     getline(file, line); // skip header
 
-    resumesCount = 0; // reset
+    resumesCount = 0;
     int id = 1;
 
     while (getline(file, line)) {
         if (line.empty()) continue;
 
-        // Remove enclosing quotes
         if (line.front() == '"' && line.back() == '"')
             line = line.substr(1, line.size() - 2);
 
@@ -59,7 +61,7 @@ void ResumeArray::loadFromCSV(const string &filename) {
         r.resumeID = id++;
         r.description = line;
 
-        // --- Keyword Extraction ---
+        // --- Keyword extraction ---
         string desc = r.description;
         transform(desc.begin(), desc.end(), desc.begin(), ::tolower);
 
@@ -76,15 +78,6 @@ void ResumeArray::loadFromCSV(const string &filename) {
             if (endPos == string::npos)
                 endPos = r.description.length();
             skills = r.description.substr(startPos, endPos - startPos);
-        } else {
-            stringstream ss(r.description);
-            string word;
-            int k = 0;
-            while (ss >> word && k < 10)
-                r.keywords[k++] = word;
-            for (int k2 = k; k2 < 10; ++k2)
-                r.keywords[k2] = "";
-            continue;
         }
 
         stringstream ss(skills);
@@ -106,7 +99,17 @@ void ResumeArray::loadFromCSV(const string &filename) {
     cout << "[Performance] loadFromCSV [Resume Array] execution time: "
          << duration_cast<microseconds>(end - start).count()
          << " microseconds\n";
+
+    // ===== MEMORY USAGE (Windows) =====
+    PROCESS_MEMORY_COUNTERS_EX pmc;
+    if (GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc))) {
+        cout << "[Memory] loadFromCSV [Resume Array] memory usage: "
+             << pmc.WorkingSetSize / 1024.0 << " KB\n" << endl;
+    } else {
+        cout << "[Memory] Unable to retrieve memory usage info.\n";
+    }
 }
+
 
 void ResumeArray::saveToCSV(const string &filename) {
     auto start = high_resolution_clock::now();

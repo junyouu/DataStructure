@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <windows.h>
+#include <psapi.h>
 using namespace std;
 using namespace std::chrono;
 
@@ -50,6 +52,15 @@ void extractResumeKeywords(ResumeNode *node) {
     for (int i = idx; i < 10; ++i)
         node->keywords[i] = "";
 }
+
+
+void printMemoryUsage() {
+    PROCESS_MEMORY_COUNTERS memInfo;
+    GetProcessMemoryInfo(GetCurrentProcess(), &memInfo, sizeof(memInfo));
+    SIZE_T memUsedKB = memInfo.WorkingSetSize / 1024;
+    cout << "[Memory Usage] Current memory: " << memUsedKB << " KB\n\n";
+}
+
 
 // ---------------- insert node ----------------
 void ResumeLinkedList::insertAtEnd(const string &desc) {
@@ -97,7 +108,10 @@ void ResumeLinkedList::loadFromCSV(const string &filename) {
     cout << "[Performance] loadFromCSV [Resume Linked List] execution time: "
          << duration_cast<microseconds>(end - start).count()
          << " microseconds\n";
+    // ✅ Print memory usage after loading
+    printMemoryUsage();
 }
+
 
 // ---------------- save file ----------------
 void ResumeLinkedList::saveToCSV(const string &filename) {

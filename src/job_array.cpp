@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <windows.h>
+#include <psapi.h>
 using namespace std;
 using namespace std::chrono;
 
@@ -107,7 +109,17 @@ void JobArray::loadFromCSV(const string &filename) {
     cout << "[Performance] loadFromCSV [Job Array] execution time: "
          << duration_cast<microseconds>(end - start).count()
          << " microseconds\n";
+
+    // ===== MEMORY USAGE (Windows) =====
+    PROCESS_MEMORY_COUNTERS_EX pmc;
+    if (GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc))) {
+        cout << "[Memory] loadFromCSV [Job Array] memory usage: "
+             << pmc.WorkingSetSize / 1024.0 << " KB\n" << endl;
+    } else {
+        cout << "[Memory] Unable to retrieve memory usage info.\n";
+    }
 }
+
 
 // ---------------- saveToCSV ----------------
 void JobArray::saveToCSV(const string &filename) {
