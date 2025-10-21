@@ -3,68 +3,52 @@
 
 #include <string>
 #include <stdexcept>
+using namespace std;
 
 struct Job {
-    std::string id;
-    std::string title;
-    std::string description;
-    std::string location;
-    double salary; // optional salary field
-    std::string keywords[10];
+    int jobID;                // auto ID (same as JobNode)
+    string title;             // title before "needed with experience"
+    string description;       // full text
+    string keywords[10];      // max 10 keywords
 };
 
 class JobArray {
 private:
-    Job *jobs;         // dynamic array of Job
-    int jobsCount;     // number of jobs currently stored
-    int jobsCapacity;  // allocated capacity
-    std::string csvFilename; // stored filename for save operations
+    Job *jobs;                // dynamic array of Job
+    int jobsCount;            // number of jobs currently stored
+    int jobsCapacity;         // allocated capacity
+    string csvFilename;       // store CSV filename for saving
 
-    // ensure capacity for at least minCapacity elements
+    // Ensure capacity for at least minCapacity elements
     void ensureCapacity(int minCapacity);
 
 public:
     JobArray();
     ~JobArray();
 
-    // Load jobs from CSV file
-    void loadJobs(const std::string& filename);
+    // Insert new job at end (similar to insertAtEnd in linked list)
+    void insertAtEnd(const string &desc);
 
-    // Match with other jobs (otherJobs is a raw array with otherCount elements)
-    void matchJobs(const Job *otherJobs, int otherCount);
-
-    // Input a job index/ID and match 3 resumes (simulation)
-    void matchThreeResumes(int jobIndex);
-    // New: match top 3 resumes for a given job using ResumeArray
-    void matchTop3ForJobWithResumes(int jobIndex, const class ResumeArray &resumes);
-    // Run full matching for all jobs and print top 3 resumes per job
-    void findTopMatchesWithResumes(const class ResumeArray &resumes);
-
-    // Add new job record
-    void addJob(const Job& newJob);
-    // Interactive add/delete/save operations (array-mode)
-    void addRecord();
-    void saveToCSV(const std::string &filename);
-    bool confirmAction(const std::string &message);
-
-    // Delete operations similar to linked list
-    void deleteFromHead();
-    void deleteFromMiddle(int position); // 1-based
-    void deleteFromTail();
-
-    // Delete job record (by index)
-    void deleteJob(int position);
+    // Load & save
+    void loadFromCSV(const string &filename);
+    void saveToCSV(const string &filename);
 
     // Utility
-    int getSize() const { return jobsCount; }
+    void clear();
+    int getSize() const;
+    const Job* getArray() const { return jobs; } // optional getter for raw array
+    void display() const;
+    const Job& getJob(int index) const;
 
-    // Returns reference to job at index; throws std::out_of_range when invalid
-    const Job& getJob(int index) const {
-        if (index < 0 || index >= jobsCount) throw std::out_of_range("JobArray::getJob index out of range");
-        return jobs[index];
-    }
+    // Add/delete operations similar to linked list
+    void addRecord();                 // add new job record (prompts user input)
+    void deleteFromHead();            // delete first record
+    void deleteFromMiddle(int position); // delete from middle (1-based index)
+    void deleteFromTail();            // delete last record
+    Job* findJobByID(int jobID);      // find job by ID
 
-    void printJobs(int count = 5) const; // preview
+    // Helper functions
+    bool confirmAction(const string &message);
 };
 
 #endif

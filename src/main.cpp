@@ -1,6 +1,4 @@
 #include <iostream>
-#include <chrono>
-#include <iomanip>
 #include <cstdlib>
 #include <string>
 #include <fstream>
@@ -11,77 +9,59 @@
 #include "utility.h"
 #include "matching.h"
 using namespace std;
-using namespace std::chrono;
 
 int main() {
     cout << "========================================\n";
     cout << "              Loading Job               \n";
     cout << "========================================\n";
 
-    std::string jobFile = "../data/job_description.csv";
-    std::string resumeFile = "../data/resume.csv";
-    std::string tempFolder = "../data/temp";
+    string jobFile = "../data/job_description.csv";
+    string resumeFile = "../data/resume.csv";
+    string tempFolder = "../data/temp";
 
-    // Create temp folder
-    std::string command = "mkdir \"" + tempFolder + "\"";
+    string command = "mkdir \"" + tempFolder + "\"";
     system(command.c_str());
 
-    // Copy files into temp folder
-    std::string jobCopy = tempFolder + "/job_description.csv";
-    std::string resumeCopy = tempFolder + "/resume.csv";
+    string jobCopy = tempFolder + "/job_description.csv";
+    string resumeCopy = tempFolder + "/resume.csv";
 
     if (!copyFile(jobFile, jobCopy)) {
-        std::cout << "Failed to copy job file!" << std::endl;
+        cout << "Failed to copy job file!" << endl;
         return 1;
     }
 
     if (!copyFile(resumeFile, resumeCopy)) {
-        std::cout << "Failed to copy resume file!" << std::endl;
+        cout << "Failed to copy resume file!" << endl;
         return 1;
     }
 
-    // --- Load Jobs ---
-    auto startJob = high_resolution_clock::now();
     JobLinkedList jobLinkedList;
     jobLinkedList.loadFromCSV(jobCopy);
-    auto endJob = high_resolution_clock::now();
-    auto jobDuration = duration_cast<microseconds>(endJob - startJob).count();
 
-    cout << "\nLoaded " << jobLinkedList.size() << " job(s) [LINKED LIST] in "
-         << jobDuration << " microseconds.\n";
-
-    auto startJobArr = high_resolution_clock::now();
     JobArray jobArray;
-    jobArray.loadJobs(jobCopy);
-    auto endJobArr = high_resolution_clock::now();
-    auto jobDurationArr = duration_cast<microseconds>(endJobArr - startJobArr).count();
+    jobArray.loadFromCSV(jobCopy);
 
-    cout << "Loaded " << jobArray.getSize() << " job(s) [ARRAY] in "
-         << jobDurationArr << " microseconds.\n";
-
-    // --- Load Resumes ---
-    auto startResume = high_resolution_clock::now();
     ResumeLinkedList resumeLinkedList;
     resumeLinkedList.loadFromCSV(resumeCopy);
-    auto endResume = high_resolution_clock::now();
-    auto resumeDuration = duration_cast<microseconds>(endResume - startResume).count();
 
-    cout << "Loaded " << resumeLinkedList.size() << " resume(s) [LINKED LIST] in "
-         << resumeDuration << " microseconds.\n";
-
-    auto startResArr = high_resolution_clock::now();
     ResumeArray resumeArray;
-    resumeArray.loadResumes(resumeCopy);
-    auto endResArr = high_resolution_clock::now();
-    auto resDurationArr = duration_cast<microseconds>(endResArr - startResArr).count();
+    resumeArray.loadFromCSV(resumeCopy);
 
-    cout << "Loaded " << resumeArray.getSize() << " resume(s) [ARRAY] in "
-         << resDurationArr << " microseconds.\n";
-
-    // Menu loop
     int choice;
     do {
-        displayMenu();
+        cout << "\n========================================\n";
+        cout << "     Job & Resume Matching System\n";
+        cout << "========================================\n";
+        cout << "1. Match Top 3 Resumes for a Job\n";
+        cout << "2. Match Top 3 Jobs for a Resume\n";
+        cout << "3. Search Resume by Keyword\n";
+        cout << "4. Add Record (Job/Resume)\n";
+        cout << "5. Delete Record (Job/Resume)\n";
+        cout << "6. Display All Jobs\n";
+        cout << "7. Display All Resumes\n";
+        cout << "0. Exit\n";
+        cout << "========================================\n";
+        cout << "Enter choice: ";
         cin >> choice;
 
         if (cin.fail()) {
@@ -91,7 +71,7 @@ int main() {
             continue;
         }
 
-        if (choice >= 1 && choice <= 6) {
+        if (choice >= 1 && choice <= 7) {
             int dataChoice;
             cout << "\nUse Data Structure:\n1. Linked List\n2. Array\nChoose: ";
             cin >> dataChoice;
@@ -105,259 +85,112 @@ int main() {
 
             switch (choice) {
                 case 1: {
-                    // Match top 3 resumes for a specific job ID
+                    int jobID;
                     if (dataChoice == 1) {
-                        int jobID;
                         cout << "\nEnter Job ID (1 to " << jobLinkedList.size() << "): ";
                         cin >> jobID;
-
-                        if (cin.fail()) {
-                            cin.clear();
-                            cin.ignore(10000, '\n');
-                            cout << "Invalid input.\n";
-                            break;
-                        }
-
-                        auto start = high_resolution_clock::now();
-                        Matcher::matchTop3ForJob(jobID, jobLinkedList, resumeLinkedList);
-                        auto end = high_resolution_clock::now();
-                        auto duration = duration_cast<microseconds>(end - start).count();
-
-                        cout << "\n[Performance] Matching execution time: " << duration << " microseconds\n";
-                    }
-
-                    if (dataChoice == 2) {
-                        int jobID;
+                        Matcher::matchTop3ForJobLinkedList(jobID, jobLinkedList, resumeLinkedList);
+                    } else {
                         cout << "\nEnter Job ID (1 to " << jobArray.getSize() << "): ";
                         cin >> jobID;
-                        if (cin.fail()) {
-                            cin.clear();
-                            cin.ignore(10000, '\n');
-                            cout << "Invalid input.\n";
-                            break;
-                        }
-                        auto start = high_resolution_clock::now();
-                        // jobArray uses 0-based indices
-                        jobArray.matchTop3ForJobWithResumes(jobID - 1, resumeArray);
-                        auto end = high_resolution_clock::now();
-                        auto duration = duration_cast<microseconds>(end - start).count();
-                        cout << "\n[Performance] Matching execution time: " << duration << " microseconds\n";
+                        Matcher::matchTop3ForJobArray(jobID - 1, jobArray, resumeArray);
                     }
                     break;
                 }
 
                 case 2: {
-                    // Add new record
+                    int resumeID;
                     if (dataChoice == 1) {
-                        int type;
-                        cout << "\nAdd:\n1. Job\n2. Resume\nChoose type: ";
-                        cin >> type;
-                        cin.ignore(10000, '\n');
-
-                        if (type == 1) {
-                            auto start = high_resolution_clock::now();
-                            jobLinkedList.addRecord();
-                            auto end = high_resolution_clock::now();
-                            auto duration = duration_cast<microseconds>(end - start).count();
-
-                            cout << "[Performance] Add job execution time: " << duration << " microseconds\n";
-                        } else if (type == 2) {
-                            auto start = high_resolution_clock::now();
-                            resumeLinkedList.addRecord();
-                            auto end = high_resolution_clock::now();
-                            auto duration = duration_cast<microseconds>(end - start).count();
-
-                            cout << "[Performance] Add resume execution time: " << duration << " microseconds\n";
-                        } else {
-                            cout << "Invalid choice.\n";
-                        }
-                    }
-
-                    if (dataChoice == 2) {
-                        int type;
-                        cout << "\nAdd:\n1. Job\n2. Resume\nChoose type: ";
-                        cin >> type;
-                        cin.ignore(10000, '\n');
-                        if (type == 1) {
-                            auto start = high_resolution_clock::now();
-                            jobArray.addRecord();
-                            auto end = high_resolution_clock::now();
-                            auto duration = duration_cast<microseconds>(end - start).count();
-                            cout << "[Performance] Add job execution time: " << duration << " microseconds\n";
-                        } else if (type == 2) {
-                            auto start = high_resolution_clock::now();
-                            resumeArray.addRecord();
-                            auto end = high_resolution_clock::now();
-                            auto duration = duration_cast<microseconds>(end - start).count();
-                            cout << "[Performance] Add resume execution time: " << duration << " microseconds\n";
-                        } else {
-                            cout << "Invalid choice.\n";
-                        }
+                        cout << "\nEnter Resume ID (1 to " << resumeLinkedList.size() << "): ";
+                        cin >> resumeID;
+                        Matcher::matchTop3ForResumeLinkedList(resumeID, jobLinkedList, resumeLinkedList);
+                    } else {
+                        cout << "\nEnter Resume ID (1 to " << resumeArray.size() << "): ";
+                        cin >> resumeID;
+                        Matcher::matchTop3ForResumeArray(resumeID - 1, jobArray, resumeArray);
                     }
                     break;
                 }
 
                 case 3: {
-                    // Delete record
-                    if (dataChoice == 1) {
-                        int type, deleteChoice;
-                        cout << "\nDelete from:\n1. Jobs\n2. Resumes\nChoose type: ";
-                        cin >> type;
-
-                        if (type == 1) {
-                            cout << "\nDelete:\n1. From Head\n2. From Middle (position)\n3. From Tail\nChoose: ";
-                            cin >> deleteChoice;
-
-                            auto start = high_resolution_clock::now();
-                            if (deleteChoice == 1) {
-                                jobLinkedList.deleteFromHead();
-                            } else if (deleteChoice == 2) {
-                                int pos;
-                                cout << "Enter position (1 to " << jobLinkedList.size() << "): ";
-                                cin >> pos;
-                                jobLinkedList.deleteFromMiddle(pos);
-                            } else if (deleteChoice == 3) {
-                                jobLinkedList.deleteFromTail();
-                            } else {
-                                cout << "Invalid choice.\n";
-                            }
-                            auto end = high_resolution_clock::now();
-                            auto duration = duration_cast<microseconds>(end - start).count();
-
-                            cout << "[Performance] Delete job execution time: " << duration << " microseconds\n";
-
-                        } else if (type == 2) {
-                            cout << "\nDelete:\n1. From Head\n2. From Middle (position)\n3. From Tail\nChoose: ";
-                            cin >> deleteChoice;
-
-                            auto start = high_resolution_clock::now();
-                            if (deleteChoice == 1) {
-                                resumeLinkedList.deleteFromHead();
-                            } else if (deleteChoice == 2) {
-                                int pos;
-                                cout << "Enter position (1 to " << resumeLinkedList.size() << "): ";
-                                cin >> pos;
-                                resumeLinkedList.deleteFromMiddle(pos);
-                            } else if (deleteChoice == 3) {
-                                resumeLinkedList.deleteFromTail();
-                            } else {
-                                cout << "Invalid choice.\n";
-                            }
-                            auto end = high_resolution_clock::now();
-                            auto duration = duration_cast<microseconds>(end - start).count();
-
-                            cout << "[Performance] Delete resume execution time: " << duration << " microseconds\n";
-                        } else {
-                            cout << "Invalid choice.\n";
-                        }
-                    }
-
-                    if (dataChoice == 2) {
-                            int type, deleteChoice;
-                            cout << "\nDelete from:\n1. Jobs\n2. Resumes\nChoose type: ";
-                            cin >> type;
-                            if (type == 1) {
-                                cout << "\nDelete:\n1. From Head\n2. From Middle (position)\n3. From Tail\nChoose: ";
-                                cin >> deleteChoice;
-                                auto start = high_resolution_clock::now();
-                                if (deleteChoice == 1) {
-                                    jobArray.deleteFromHead();
-                                } else if (deleteChoice == 2) {
-                                    int pos; cout << "Enter position (1 to " << jobArray.getSize() << "): "; cin >> pos;
-                                    jobArray.deleteFromMiddle(pos);
-                                } else if (deleteChoice == 3) {
-                                    jobArray.deleteFromTail();
-                                } else {
-                                    cout << "Invalid choice.\n";
-                                }
-                                auto end = high_resolution_clock::now();
-                                auto duration = duration_cast<microseconds>(end - start).count();
-                                cout << "[Performance] Delete job execution time: " << duration << " microseconds\n";
-
-                            } else if (type == 2) {
-                                cout << "\nDelete:\n1. From Head\n2. From Middle (position)\n3. From Tail\nChoose: ";
-                                cin >> deleteChoice;
-                                auto start = high_resolution_clock::now();
-                                if (deleteChoice == 1) {
-                                    // delete head
-                                    if (resumeArray.getSize() > 0) resumeArray.deleteResume(0);
-                                    else cout << "No resumes to delete.\n";
-                                } else if (deleteChoice == 2) {
-                                    int pos; cout << "Enter position (1 to " << resumeArray.getSize() << "): "; cin >> pos;
-                                    if (!cin.fail() && pos >= 1 && pos <= resumeArray.getSize()) resumeArray.deleteResume(pos - 1);
-                                    else cout << "Invalid position.\n";
-                                } else if (deleteChoice == 3) {
-                                    // delete tail
-                                    int sz = resumeArray.getSize();
-                                    if (sz > 0) resumeArray.deleteResume(sz - 1);
-                                    else cout << "No resumes to delete.\n";
-                                } else {
-                                    cout << "Invalid choice.\n";
-                                }
-                                auto end = high_resolution_clock::now();
-                                auto duration = duration_cast<microseconds>(end - start).count();
-                                cout << "[Performance] Delete resume execution time: " << duration << " microseconds\n";
-                            } else {
-                                cout << "Invalid choice.\n";
-                            }
-                    }
+                    if (dataChoice == 1)
+                        Matcher::searchByKeywordLinkedList(resumeLinkedList);
+                    else
+                        Matcher::searchByKeywordArray(resumeArray);
                     break;
                 }
 
                 case 4: {
-                    // Display all jobs
-                    if (dataChoice == 1) {
-                        jobLinkedList.display();
-                    }
+                    int type;
+                    cout << "\nAdd:\n1. Job\n2. Resume\nChoose type: ";
+                    cin >> type;
+                    cin.ignore(10000, '\n');
 
-                    if (dataChoice == 2) {
-                        jobArray.printJobs(jobArray.getSize());
+                    if (dataChoice == 1) {
+                        if (type == 1) jobLinkedList.addRecord();
+                        else if (type == 2) resumeLinkedList.addRecord();
+                    } else {
+                        if (type == 1) jobArray.addRecord();
+                        else if (type == 2) resumeArray.addRecord();
                     }
                     break;
                 }
 
                 case 5: {
-                    // Display all resumes
-                    if (dataChoice == 1) {
-                        resumeLinkedList.display();
-                    }
+                    int type, delChoice;
+                    cout << "\nDelete from:\n1. Jobs\n2. Resumes\nChoose type: ";
+                    cin >> type;
 
-                    if (dataChoice == 2) {
-                        resumeArray.printResumes(resumeArray.getSize());
+                    cout << "\nDelete:\n1. From Head\n2. From Middle\n3. From Tail\nChoose: ";
+                    cin >> delChoice;
+
+                    if (dataChoice == 1) {
+                        if (type == 1) {
+                            if (delChoice == 1) jobLinkedList.deleteFromHead();
+                            else if (delChoice == 2) {
+                                int pos; cout << "Enter position: "; cin >> pos;
+                                jobLinkedList.deleteFromMiddle(pos);
+                            } else if (delChoice == 3) jobLinkedList.deleteFromTail();
+                        } else if (type == 2) {
+                            if (delChoice == 1) resumeLinkedList.deleteFromHead();
+                            else if (delChoice == 2) {
+                                int pos; cout << "Enter position: "; cin >> pos;
+                                resumeLinkedList.deleteFromMiddle(pos);
+                            } else if (delChoice == 3) resumeLinkedList.deleteFromTail();
+                        }
+                    } else {
+                        if (type == 1) {
+                            if (delChoice == 1) jobArray.deleteFromHead();
+                            else if (delChoice == 2) {
+                                int pos; cout << "Enter position: "; cin >> pos;
+                                jobArray.deleteFromMiddle(pos);
+                            } else if (delChoice == 3) jobArray.deleteFromTail();
+                        } else if (type == 2) {
+                            if (delChoice == 1) resumeArray.deleteFromHead();
+                            else if (delChoice == 2) {
+                                int pos; cout << "Enter position: "; cin >> pos;
+                                resumeArray.deleteFromMiddle(pos);
+                            } else if (delChoice == 3) resumeArray.deleteFromTail();
+                        }
                     }
                     break;
                 }
 
                 case 6: {
-                    // Run full matching
-                    if (dataChoice == 1) {
-                        auto startMatch = high_resolution_clock::now();
-                        Matcher::findTopMatches(jobLinkedList, resumeLinkedList);
-                        auto endMatch = high_resolution_clock::now();
-                        auto matchDuration = duration_cast<microseconds>(endMatch - startMatch).count();
+                    if (dataChoice == 1) jobLinkedList.display();
+                    else jobArray.display();
+                    break;
+                }
 
-                        cout << "\n[Performance] Full matching execution time: " << matchDuration << " microseconds\n";
-                    }
-
-                    if (dataChoice == 2) {
-                        jobArray.findTopMatchesWithResumes(resumeArray);
-                    }
+                case 7: {
+                    if (dataChoice == 1) resumeLinkedList.display();
+                    else resumeArray.display();
                     break;
                 }
             }
-        }
-
-        else if (choice == 0) {
-            cout << "\n=== Final Execution Time Summary ===\n";
-            cout << "Initial Job Loading:    " << jobDuration << " microseconds\n";
-            cout << "Initial Resume Loading: " << resumeDuration << " microseconds\n";
-            cout << "Array Job Loading:      " << jobDurationArr << " microseconds\n";
-            cout << "Array Resume Loading:   " << resDurationArr << " microseconds\n";
-            cout << "Total Initial:          " << (jobDuration + resumeDuration) << " microseconds\n";
+        } else if (choice == 0) {
             cout << "\nThank you for using the Job & Resume Matching System!\n";
-        } 
-
-        else {
+        } else {
             cout << "Invalid choice. Please try again.\n";
         }
 

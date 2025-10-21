@@ -25,7 +25,7 @@ public:
 
     void insertAtEnd(const string &desc);  // only description
     void loadFromCSV(const string &filename);
-    void saveToCSV(const string &filename);  // save current list to CSV
+    void saveToCSV(const string &filename) const;  // save current list to CSV
     void clear();
     int size() const;
     JobNode *getHead() const;
@@ -36,7 +36,7 @@ public:
     void deleteFromHead();               // delete first record
     void deleteFromMiddle(int position); // delete from middle (1-based index)
     void deleteFromTail();               // delete last record
-    JobNode* findJobByID(int jobID);     // find job by ID
+    JobNode* findJobByID(int jobID) const;     // find job by ID
     
     // Helper functions
     bool confirmAction(const string &message);  // ask user confirmation
