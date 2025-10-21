@@ -370,3 +370,13 @@ void ResumeLinkedList::deleteFromTail() {
         cout << "Change saved in memory only (not written to CSV file).\n";
     }
 }
+
+ResumeNode* ResumeLinkedList::findResumeByID(int id) {
+    ResumeNode* current = head;
+    while (current) {
+        if (current->resumeID == id)
+            return current;
+        current = current->next;
+    }
+    return nullptr; // not found
+}

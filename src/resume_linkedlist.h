@@ -38,6 +38,7 @@ public:
     
     // Helper functions
     bool confirmAction(const string &message);  // ask user confirmation
+    ResumeNode* findResumeByID(int id);
 };
 
 #endif
