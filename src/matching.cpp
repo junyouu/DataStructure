@@ -63,6 +63,17 @@ void printTopNLinkedList(MatchNode *head, int n) {
     }
 }
 
+// Print top N job matches
+void printTopNJobLinkedList(MatchNode *head, int n) {
+    int count = 0;
+    while (head && count < n) {
+        cout << count + 1 << ". Job [" << head->resumeID << "] (" << head->rate << "%)\n"
+             << head->desc << "\n";
+        head = head->next;
+        count++;
+    }
+}
+
 
 void Matcher::matchTop3ForJobLinkedList(int jobID, JobLinkedList &jobs, ResumeLinkedList &resumes) {
     auto totalStart = high_resolution_clock::now(); // start total timer
@@ -363,7 +374,7 @@ void Matcher::matchTop3ForResumeLinkedList(int resumeID, JobLinkedList &jobs, Re
     auto sortEnd = high_resolution_clock::now();
 
     cout << "\n=== Top 3 Sorted Job Matches ===\n";
-    printTopNLinkedList(head, 3);
+    printTopNJobLinkedList(head, 3);
 
     cout << "[Performance] Matching (Linked List): "
          << duration_cast<microseconds>(matchEnd - matchStart).count() << " microseconds\n";
