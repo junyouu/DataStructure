@@ -6,18 +6,14 @@
 using namespace std;
 using namespace std::chrono;
 
-/* ============================
-   Helper Functions
-   ============================ */
+
 string toLower(const string &s) {
     string result = s;
     transform(result.begin(), result.end(), result.begin(), ::tolower);
     return result;
 }
 
-/* ============================
-   LINKED LIST VERSION
-   ============================ */
+
 struct MatchNode {
     int resumeID;
     double rate;
@@ -67,64 +63,6 @@ void printTopNLinkedList(MatchNode *head, int n) {
     }
 }
 
-// void Matcher::findTopMatchesLinkedList(JobLinkedList &jobs, ResumeLinkedList &resumes) {
-//     auto startAll = high_resolution_clock::now();
-//     cout << "\n=== Matching Results (Top 3 Candidates for Each Job) [Linked List] ===\n";
-
-//     JobNode *job = jobs.getHead();
-//     while (job) {
-//         cout << "\nJob [" << job->jobID << "]: " << job->title << "\n";
-
-//         int jobKeywordCount = 0;
-//         for (int i = 0; i < 10; ++i)
-//             if (!job->keywords[i].empty()) jobKeywordCount++;
-//         if (jobKeywordCount == 0) {
-//             cout << "No keywords found.\n";
-//             job = job->next;
-//             continue;
-//         }
-
-//         MatchNode *head = nullptr;
-
-//         ResumeNode *resume = resumes.getHead();
-//         while (resume) {
-//             int matchKeywords = 0;
-//             for (int i = 0; i < 10; ++i) {
-//                 if (job->keywords[i].empty()) continue;
-//                 string jobKey = toLower(job->keywords[i]);
-//                 for (int j = 0; j < 10; ++j) {
-//                     if (resume->keywords[j].empty()) continue;
-//                     if (jobKey == toLower(resume->keywords[j])) {
-//                         matchKeywords++;
-//                         break;
-//                     }
-//                 }
-//             }
-//             double rate = (double)matchKeywords / jobKeywordCount * 100.0;
-//             appendMatchNode(head, resume->resumeID, rate, resume->description);
-//             resume = resume->next;
-//         }
-
-//         auto sortStart = high_resolution_clock::now();
-//         sortMatchLinkedList(head);
-//         auto sortEnd = high_resolution_clock::now();
-
-//         cout << "\nTop 3 Sorted Matches:\n";
-//         printTopNLinkedList(head, 3);
-
-//         cout << "[Sorting Performance] (Linked List): "
-//              << duration_cast<microseconds>(sortEnd - sortStart).count()
-//              << " microseconds\n";
-
-//         while (head) { MatchNode *temp = head; head = head->next; delete temp; }
-//         job = job->next;
-//     }
-
-//     auto endAll = high_resolution_clock::now();
-//     cout << "\n[Performance] Total Matching execution time (Linked List): "
-//          << duration_cast<microseconds>(endAll - startAll).count()
-//          << " microseconds\n";
-// }
 
 void Matcher::matchTop3ForJobLinkedList(int jobID, JobLinkedList &jobs, ResumeLinkedList &resumes) {
     auto totalStart = high_resolution_clock::now(); // start total timer
@@ -244,65 +182,7 @@ void Matcher::searchByKeywordLinkedList(ResumeLinkedList &resumes) {
         cout << "No resumes found with the keyword \"" << keyword << "\".\n";
 }
 
-/* ============================
-   ARRAY VERSION
-   ============================ */
-// void Matcher::findTopMatchesArray(JobArray &jobs, ResumeArray &resumes) {
-//     auto startAll = high_resolution_clock::now();
-//     cout << "\n=== Matching Results (Top 3 Candidates for Each Job) [Array] ===\n";
 
-//     for (int i = 0; i < jobs.getSize(); ++i) {
-//         const Job &job = jobs.getJob(i);
-//         cout << "\nJob [" << i + 1 << "]: " << job.title << "\n";
-
-//         int jobKeywordCount = 0;
-//         for (int k = 0; k < 10; ++k)
-//             if (!job.keywords[k].empty()) jobKeywordCount++;
-//         if (jobKeywordCount == 0) {
-//             cout << "No keywords found.\n";
-//             continue;
-//         }
-
-//         struct Match { int resumeIndex; double rate; string desc; };
-//         Match matches[100];
-//         int matchCount = 0;
-
-//         for (int j = 0; j < resumes.size() && matchCount < 100; ++j) {
-//             const Resume &resume = resumes.getResume(j);
-//             int matchKeywords = 0;
-//             for (int a = 0; a < 10; ++a) {
-//                 if (job.keywords[a].empty()) continue;
-//                 string jobKey = toLower(job.keywords[a]);
-//                 for (int b = 0; b < 10; ++b) {
-//                     if (resume.keywords[b].empty()) continue;
-//                     if (jobKey == toLower(resume.keywords[b])) {
-//                         matchKeywords++;
-//                         break;
-//                     }
-//                 }
-//             }
-//             matches[matchCount++] = { j, (double)matchKeywords / jobKeywordCount * 100.0, resume.description };
-//         }
-
-//         auto sortStart = high_resolution_clock::now();
-//         sort(matches, matches + matchCount, [](const Match &a, const Match &b){ return a.rate > b.rate; });
-//         auto sortEnd = high_resolution_clock::now();
-
-//         cout << "\nTop 3 Sorted Matches:\n";
-//         for (int t = 0; t < min(3, matchCount); ++t)
-//             cout << t + 1 << ". Resume [" << matches[t].resumeIndex + 1 << "] ("
-//                  << matches[t].rate << "%)\n" << matches[t].desc << "\n";
-
-//         // cout << "[Sorting Performance] (Array): "
-//         //      << duration_cast<microseconds>(sortEnd - sortStart).count()
-//         //      << " microseconds\n";
-//     }
-
-//     auto endAll = high_resolution_clock::now();
-//     cout << "\n[Performance] Total Matching execution time (Array): "
-//          << duration_cast<microseconds>(endAll - startAll).count()
-//          << " microseconds\n";
-// }
 
 void Matcher::matchTop3ForJobArray(int jobIndex, JobArray &jobs, ResumeArray &resumes) {
     if (jobIndex < 0 || jobIndex >= jobs.getSize()) {

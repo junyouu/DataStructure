@@ -32,9 +32,6 @@ void ResumeArray::ensureCapacity(int minCapacity) {
     resumesCapacity = newCap;
 }
 
-// ===============================
-// Load and Save
-// ===============================
 void ResumeArray::loadFromCSV(const string &filename) {
     double memBefore = getCurrentMemoryKB();  // record before loading
     auto start = high_resolution_clock::now();
